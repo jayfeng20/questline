@@ -12,8 +12,8 @@ pub fn ex1_capacity_steps(n: usize) -> Vec<usize> {
     todo!("ex1: push n times, record capacity whenever it changes")
 }
 
-/// Exercise 2 (predict, then test): how many times does the buffer of `Vec::with_capacity(10)`
-/// move while pushing 11 elements?
-pub fn ex2_predict_moves_after_reserving_10() -> usize {
+/// Exercise 2 (predict, then test): how many times does `Vec::with_capacity(10)` reallocate
+/// (change capacity) while pushing 11 elements?
+pub fn ex2_predict_reallocations_after_reserving_10() -> usize {
     todo!("ex2: a number")
 }

@@ -20,7 +20,7 @@ cargo run -- check
 
 | # | lesson | you will be able to | evidence you produce |
 |---|--------|---------------------|----------------------|
-| 1 | vec_growth | explain Vec reallocation and when to reserve | capacity sequence, pointer moves (13 for 1M pushes, 0 reserved) |
+| 1 | vec_growth | explain Vec reallocation and when to reserve | capacity sequence, pointer moves (at most 20 for 1M pushes, 0 reserved) |
 | 2 | worker_threads | pick runtime flavour and worker count for CPU, IO and blocking work | thread ids, 400 ms vs 100 ms, heartbeat ticks 0 vs 21 |
 | 3 | parquet_streaming | stream RecordBatches with bounded memory and projections | max 601 KiB per batch vs 8.26 MiB table |
 | 4 | hashmap_from_scratch | implement an open-addressing HashMap with Borrow lookups, resize and tombstones | equality with std over 20k random ops; probe lengths with a bad hasher |

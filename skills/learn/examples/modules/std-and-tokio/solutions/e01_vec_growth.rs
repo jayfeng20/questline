@@ -12,7 +12,7 @@ pub fn ex1_capacity_steps(n: usize) -> Vec<usize> {
     steps
 }
 
-pub fn ex2_predict_moves_after_reserving_10() -> usize {
+pub fn ex2_predict_reallocations_after_reserving_10() -> usize {
     // The 11th push exceeds the reservation once.
     1
 }

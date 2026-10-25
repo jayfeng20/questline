@@ -2,8 +2,9 @@
 //!
 //! ## Lecture
 //!
-//! A `Vec<T>` is (pointer, capacity, length). Pushing past the capacity allocates a bigger
-//! buffer and moves the elements: the pointer changes. The standard library grows
+//! A `Vec<T>` is (pointer, capacity, length). Pushing past the capacity reallocates: the
+//! allocator grows the buffer in place or moves the elements to a bigger one (the pointer
+//! changes; how often is up to the allocator). The standard library grows
 //! geometrically (amortised O(1) push), so the number of reallocations for n pushes is
 //! O(log n). `Vec::with_capacity(n)` allocates once up front.
 //!

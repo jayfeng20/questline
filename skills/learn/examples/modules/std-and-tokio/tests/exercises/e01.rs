@@ -10,15 +10,17 @@ fn ex1_starts_at_zero_and_grows_geometrically() {
 
 #[test]
 fn ex2_prediction_matches_measurement() {
+    // Capacity changes, not pointer moves: whether a reallocation moves the buffer is up to
+    // the allocator.
     let mut v: Vec<u64> = Vec::with_capacity(10);
-    let mut ptr = v.as_ptr();
-    let mut moves = 0;
+    let mut capacity = v.capacity();
+    let mut reallocations = 0;
     for i in 0..11 {
         v.push(i);
-        if v.as_ptr() != ptr {
-            moves += 1;
-            ptr = v.as_ptr();
+        if v.capacity() != capacity {
+            reallocations += 1;
+            capacity = v.capacity();
         }
     }
-    assert_eq!(ex2_predict_moves_after_reserving_10(), moves);
+    assert_eq!(ex2_predict_reallocations_after_reserving_10(), reallocations);
 }

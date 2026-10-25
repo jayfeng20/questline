@@ -112,7 +112,7 @@ pub fn run() -> anyhow::Result<()> {
     let moves = buffer_moves(StringBuilder::with_capacity(words.len(), bytes), &words);
     let unsized_moves = buffer_moves(StringBuilder::new(), &words);
     println!("   {bytes} bytes of strings: values buffer moved {moves}x when sized, {unsized_moves}x from StringBuilder::new()");
-    check(moves == 0 && unsized_moves > 3, "with_capacity(items, bytes) appends without ever moving the bytes")?;
+    check(moves == 0 && unsized_moves > 0, "with_capacity(items, bytes) appends without ever moving the bytes; new() has to grow")?;
 
     // STEP 4: values() vs iter(): what sits under nulls matters for min/max.
     //   📖 https://docs.rs/arrow-array/60.0.0/arrow_array/array/struct.PrimitiveArray.html#method.values
