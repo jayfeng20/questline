@@ -1,0 +1,19 @@
+[package]
+name = "arrays-and-recordbatch"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "A runnable, test-checked course. Lessons: cargo run -- list"
+
+[dependencies]
+anyhow.workspace = true
+questkit.workspace = true
+# Every lesson: arrays, schemas and kernels through the `arrow` facade; `prettyprint` renders
+# batches as tables. 📖 https://docs.rs/arrow/60.0.0/arrow/
+arrow = { workspace = true, features = ["prettyprint"] }
+
+[features]
+default = []
+# Swap every exercise stub in src/exercises/ for its reference solution in solutions/.
+# `cargo test --features solutions --test exercises` proves the tests are passable.
+solutions = []

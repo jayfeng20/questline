@@ -1,0 +1,25 @@
+[package]
+name = "lance-dataset"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "A runnable, test-checked course module. Lessons: cargo run -- list"
+
+[dependencies]
+anyhow.workspace = true
+questkit.workspace = true
+# Lessons 01+: Lance datasets. 📖 https://docs.rs/lance/13.0.0/lance/
+lance = "=13.0.0"
+# Pinned here, not shared: lance 13 links against Arrow 58, the workspace pins 59.
+arrow = "=58.4.0"
+arrow-array = "=58.4.0"
+arrow-schema = "=58.4.0"
+parquet = "=58.4.0"
+futures.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+
+[features]
+default = []
+# Swap every exercise stub in src/exercises/ for its reference solution in solutions/.
+# `cargo test --features solutions --test exercises` proves the tests are passable.
+solutions = []

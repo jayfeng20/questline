@@ -1,0 +1,7 @@
+# The example quest the learn skill imitates (references/examples.md). Not registered: it lives
+# outside quests/, and `example = true` keeps autosort from adding modules to it.
+contract = 1
+title = "learn skill examples"
+summary = "Verified /learn output, one module per lesson archetype: std and tokio (arrow/parquet 59.3.0, tokio 1.54.1), Lance 13.0.0"
+tags = ["example", "std", "tokio", "arrow", "parquet", "lance"]
+example = true

@@ -1,0 +1,29 @@
+title = "Arrays, encodings and RecordBatch"
+summary = "Build and downcast primitive, string and nested arrays, choose an encoding by measured memory, assemble Schema + RecordBatch + RecordBatchReader"
+order = 1
+requires = []
+
+[[lesson]]
+number = 1
+name = "typed_arrays_and_builders"
+summary = "PrimitiveArray<T> marker types, builders, finish vs finish_cloned, values() vs iter()"
+
+[[lesson]]
+number = 2
+name = "downcasting_and_dispatch"
+summary = "dyn Array back to values: downcast_ref, AsArray, downcast_primitive_array!, DataType equality"
+
+[[lesson]]
+number = 3
+name = "nested_types"
+summary = "List, FixedSizeList, Struct, Map: builders, offsets over children, two levels of nulls"
+
+[[lesson]]
+number = 4
+name = "encodings"
+summary = "Dictionary, Run-End and View encodings: measured memory per data shape, key overflow, logical nulls"
+
+[[lesson]]
+number = 5
+name = "schema_and_recordbatch"
+summary = "Field, Schema, Metadata, RecordBatch validation, zero-copy project/slice, RecordBatchReader"

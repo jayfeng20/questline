@@ -1,0 +1,21 @@
+[package]
+name = "std-and-tokio"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "A runnable, test-checked course module. Lessons: cargo run -- list"
+
+[dependencies]
+anyhow.workspace = true
+questkit.workspace = true
+# Lesson 03: Arrow batches streamed from Parquet. 📖 https://docs.rs/parquet/59.3.0/parquet/arrow/
+arrow.workspace = true
+parquet.workspace = true
+# Lessons 02+: runtimes and worker threads. 📖 https://docs.rs/tokio/1.54.1/tokio/
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "time", "macros"] }
+
+[features]
+default = []
+# Swap every exercise stub in src/exercises/ for its reference solution in solutions/.
+# `cargo test --features solutions --test exercises` proves the tests are passable.
+solutions = []

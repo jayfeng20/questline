@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt:
+    name: fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUSTFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --locked
+
+  msrv:
+    name: msrv
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@1.89
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --workspace --all-targets --locked
+
+  # The published quest must satisfy the contract it demonstrates (docs/contract.md).
+  example-quest:
+    name: example quest
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+    defaults:
+      run:
+        working-directory: quests/example-arrow/modules/arrays-and-recordbatch
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+            quests/example-arrow -> target
+      - name: validate
+        run: cargo run -q --manifest-path ../../../../Cargo.toml -p questline -- validate
+      - name: lessons
+        run: cargo run -q -- all
+      - name: solutions pass
+        run: cargo test -q --features solutions --test exercises
+      - name: stubs compile
+        run: cargo test -q --test exercises --no-run
+      - name: check records progress
+        run: |
+          cargo run -q -- check
+          test -s .quest/progress.json
+      - name: dashboard evaluation
+        run: |
+          cargo run -q --manifest-path ../../../../Cargo.toml -p questline -- eval
+          cargo run -q --manifest-path ../../../../Cargo.toml -p questline -- list
+
+  # What /learn scaffolds must build and register, and its example quest must stay verified.
+  learn-skill:
+    name: learn skill
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+            skills/learn/examples -> target
+      - run: cargo build -q -p questline
+      - name: scaffold a quest and a module
+        run: |
+          skills/learn/scripts/scaffold.sh quest ci-scaffold
+          skills/learn/scripts/scaffold.sh module ci-scaffold first-module
+          if skills/learn/scripts/scaffold.sh module ci-scaffold first-module; then exit 1; fi
+      - name: scaffolded module honours the contract
+        working-directory: quests/ci-scaffold/modules/first-module
+        run: |
+          cargo run -q -- all
+          cargo test -q --features solutions --test exercises
+          cargo test -q --test exercises --no-run
+          cargo run -q -- check
+          test -s .quest/progress.json
+      - name: validate
+        run: target/debug/questline validate quests/ci-scaffold skills/learn/examples
+      - name: example module std-and-tokio
+        working-directory: skills/learn/examples/modules/std-and-tokio
+        run: |
+          scripts/fetch-data.sh
+          cargo run -q -- all
+          cargo test -q --features solutions --test exercises
+          cargo test -q --test exercises --no-run
+          cargo run -q -- check

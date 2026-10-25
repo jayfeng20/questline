@@ -1,0 +1,14 @@
+# The module's manifest (questline contract): the runner and the dashboard read the syllabus here.
+title = "__TITLE__"
+summary = "__SUMMARY__"
+# Position in the quest's course map; the dashboard lists modules by it.
+order = __ORDER__
+# Ids of modules in this quest whose vocabulary this one assumes.
+requires = []
+
+# One entry per lesson, numbered 1, 2, 3, ...; `name` names src/lessons/lNN_<name>.rs,
+# src/exercises/eNN_<name>.rs, solutions/eNN_<name>.rs (tests: tests/exercises/eNN.rs).
+[[lesson]]
+number = 1
+name = "vec_growth"
+summary = "EXAMPLE lesson (replace me): how Vec grows, measured"

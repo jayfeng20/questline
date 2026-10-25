@@ -1,0 +1,5 @@
+/target
+/course-data
+/data/*
+!/data/README.md
+/.quest

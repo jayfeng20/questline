@@ -1,0 +1,22 @@
+[package]
+name = "questline-core"
+description = "Questline backend: quest discovery, contract validation, the parquet registry, incremental evaluation and IDE launching"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+questkit.workspace = true
+anyhow.workspace = true
+arrow-array.workspace = true
+arrow-buffer.workspace = true
+arrow-schema.workspace = true
+parquet.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

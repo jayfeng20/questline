@@ -1,0 +1,9 @@
+title = "Lance dataset basics"
+summary = "Write, open, scan, take and time-travel a Lance dataset, with the bytes each read costs"
+order = 2
+requires = []
+
+[[lesson]]
+number = 1
+name = "lance_dataset_core"
+summary = "Dataset, fragments, Scanner streams, take, versions: with IO evidence"

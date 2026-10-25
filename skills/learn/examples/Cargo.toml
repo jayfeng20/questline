@@ -1,0 +1,18 @@
+[workspace]
+members = ["modules/*"]
+resolver = "3"
+
+# Versions shared by every module; a module opts in with `dep.workspace = true` and may add
+# features. Pin exactly (`=x.y.z`) so lessons keep matching the docs they link to.
+[workspace.dependencies]
+anyhow = "1"
+# Lesson runner and progress recording (questline contract).
+questkit = { path = "../../../crates/questkit" }
+arrow = "=59.3.0"
+parquet = "=59.3.0"
+tokio = "=1.54.1"
+futures = "=0.3.34"
+
+[profile.dev]
+# Keeps debug builds fast enough for lessons that measure things. Quote numbers from --release.
+opt-level = 1

@@ -1,0 +1,28 @@
+[workspace]
+members = ["crates/*"]
+# Quests are workspaces of their own; skill templates and examples are not built here.
+exclude = ["quests", "skills"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+license = "MIT"
+repository = "https://github.com/jayfeng20/questline"
+
+[workspace.dependencies]
+questkit = { path = "crates/questkit" }
+questline-core = { path = "crates/questline-core" }
+anyhow = "1"
+arrow-array = "60"
+arrow-buffer = "60"
+arrow-schema = "60"
+clap = { version = "4.6", features = ["derive"] }
+parquet = { version = "60", default-features = false, features = ["arrow"] }
+ratatui = "0.30"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+thiserror = "2"
+toml = "1"

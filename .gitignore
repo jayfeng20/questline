@@ -1,0 +1,7 @@
+/target
+# The dashboard's cache (rebuilt from quests/ on every sync).
+/.questline
+# Quests are personal: only the example is published.
+/quests/*
+!/quests/README.md
+!/quests/example-arrow/

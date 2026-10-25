@@ -1,0 +1,20 @@
+[package]
+name = "__PACKAGE__"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "A runnable, test-checked course module. Lessons: cargo run -- list"
+
+[dependencies]
+anyhow.workspace = true
+questkit.workspace = true
+# Topic crates: add the version to the quest's [workspace.dependencies] (pinned, `=x.y.z`) and
+# inherit it here (`arrow = { workspace = true, features = [..] }`), each with a comment naming
+# the lessons that use it and a 📖 docs.rs link. Pin a crate here only when it must differ from
+# the workspace's (e.g. a library that links an older major of a shared crate).
+
+[features]
+default = []
+# Swap every exercise stub in src/exercises/ for its reference solution in solutions/.
+# `cargo test --features solutions --test exercises` proves the tests are passable.
+solutions = []

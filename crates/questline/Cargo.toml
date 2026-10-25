@@ -1,0 +1,15 @@
+[package]
+name = "questline"
+description = "A k9s-style terminal dashboard for runnable, test-checked Rust courses (quests)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+questline-core.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+ratatui.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,29 @@
+title = "std and tokio, measured"
+summary = "Explain Vec growth, tokio workers and Arrow streaming with evidence, then rebuild HashMap and Future"
+order = 1
+requires = []
+
+[[lesson]]
+number = 1
+name = "vec_growth"
+summary = "How Vec grows, measured: capacity sequence and reallocations"
+
+[[lesson]]
+number = 2
+name = "worker_threads"
+summary = "Tokio runtimes: workers vs CPU-bound, IO-bound and blocking work"
+
+[[lesson]]
+number = 3
+name = "parquet_streaming"
+summary = "Arrow RecordBatch streams: prove only one batch is in memory"
+
+[[lesson]]
+number = 4
+name = "hashmap_from_scratch"
+summary = "How HashMap works: hashing, probing, resizing, removal; then build one"
+
+[[lesson]]
+number = 5
+name = "futures_from_scratch"
+summary = "Future, Poll, Waker: hand-written futures, block_on, join, a timer"
