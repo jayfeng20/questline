@@ -22,7 +22,7 @@ Progress  ████░░░░░░  41% 9/22           <e>      Open IDE  
 Checking  -                              <d>      Describe            <:>      Command
 Version   0.1.0                          <r>      Run lesson          <?>      Help
 ┌──────────────────────── Lessons(example-arrow/arrays-and-recordbatch)[5] ────────────────────────┐
-│#    NAME                            SUMMARY               PROGRESS          DONE     STATUS      │
+│#    LESSON                          SUMMARY               PROGRESS          DONE     STATUS      │
 │1    typed_arrays_and_builders       PrimitiveArray<T> ma  ██████████ 100%   4/4      Completed   │
 │2    downcasting_and_dispatch        dyn Array back to va  ██████████ 100%   5/5      Completed   │
 │3    nested_types                    List, FixedSizeList,  ░░░░░░░░░░   0%   0/4      NotStarted  │
@@ -63,7 +63,7 @@ Or from the dashboard: select the module, `e` to open it in your IDE, `r` on a l
 
 | subcommand | does |
 |------------|------|
-| `questline` / `questline tui` | the dashboard |
+| `questline [--theme default\|gruvbox-dark\|catppuccin-frappe]` | the dashboard (also `questline tui`); `$QUESTLINE_THEME` sets the default theme |
 | `questline list [--json]` | every module with its progress and status |
 | `questline eval [quest[/module]…] [--force] [--json]` | check the modules whose files changed; the rest reuse their cached result |
 | `questline open <quest[/module]> [--lesson N]` | a new IDE window rooted at the module (`$QUESTLINE_IDE`, else `code`, `cursor`, `zed`, …) |

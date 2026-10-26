@@ -73,7 +73,7 @@ Unknown keys are errors, so typos do not pass silently.
 |-----|------|----------|---------|
 | `title` | string | yes | |
 | `summary` | string | yes | one line, verb-first: what the learner will be able to do |
-| `order` | integer | yes | position in the course map; modules are listed by it |
+| `order` | integer | yes | position in the course map; `questline list` lists modules by it |
 | `requires` | array of module ids | no | modules of this quest whose vocabulary this one assumes |
 | `[[lesson]]` | array of tables | yes, ≥ 1 | the syllabus, in order |
 | `lesson.number` | integer | yes | 1, 2, 3, … with no gaps |

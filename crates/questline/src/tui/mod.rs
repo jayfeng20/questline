@@ -2,7 +2,10 @@
 //! evaluations so the UI stays responsive.
 
 mod app;
+mod theme;
 mod ui;
+
+pub use theme::Theme;
 
 use std::io::Write;
 use std::sync::Arc;
@@ -26,7 +29,7 @@ enum Msg {
     Done(Result<Snapshot, String>),
 }
 
-pub fn run(ql: Questline) -> anyhow::Result<()> {
+pub fn run(ql: Questline, theme: Theme) -> anyhow::Result<()> {
     let ql = Arc::new(ql);
     let snapshot = ql.sync()?;
     let (jobs_tx, jobs_rx) = mpsc::channel::<Job>();
@@ -47,7 +50,7 @@ pub fn run(ql: Questline) -> anyhow::Result<()> {
         }
     });
 
-    let mut app = App::new(ql, snapshot, jobs_tx);
+    let mut app = App::new(ql, snapshot, jobs_tx, theme.palette());
     let mut terminal = ratatui::init();
     let result = event_loop(&mut terminal, &mut app, &msg_rx);
     ratatui::restore();
@@ -127,7 +130,7 @@ mod tests {
         let ql = Arc::new(Questline::open(&root).unwrap());
         let snapshot = ql.sync().unwrap();
         let (tx, _rx) = mpsc::channel();
-        let mut app = App::new(ql, snapshot, tx);
+        let mut app = App::new(ql, snapshot, tx, Theme::Default.palette());
         let mut terminal = Terminal::new(TestBackend::new(150, 30)).unwrap();
         let mut screen = |app: &mut App| {
             terminal.draw(|f| ui::draw(f, app)).unwrap();

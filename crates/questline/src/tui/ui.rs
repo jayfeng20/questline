@@ -33,15 +33,14 @@ use super::app::OverlayKind;
 use super::app::SortKey;
 use super::app::View;
 use super::app::age;
+use super::theme::Palette;
 
-const ORANGE: Color = Color::Rgb(255, 165, 0);
-const BORDER: Color = Color::Rgb(30, 144, 255);
 const FLASH_FOR: Duration = Duration::from_secs(8);
 const BAR_WIDTH: usize = 10;
 
 const LOGO: [&str; 4] = [
-    r" ___  _   _ ___ ___ _____ _    ___ _  _ ___ ",
-    r"/ _ \| | | | __/ __|_   _| |  |_ _| \| | __|",
+    r"  ___  _   _ ___ ___ _____ _    ___ _  _ ___ ",
+    r" / _ \| | | | __/ __|_   _| |  |_ _| \| | __|",
     r"| (_) | |_| | _|\__ \ | | | |__ | || .` | _| ",
     r" \__\_\\___/|___|___/ |_| |____|___|_|\_|___|",
 ];
@@ -97,6 +96,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         Constraint::Length(1),
     ])
     .areas(frame.area());
+    frame.render_widget(Block::new().style(base(app.palette)), frame.area());
     draw_header(frame, app, header);
     if prompt > 0 {
         draw_prompt(frame, app, prompt_area);
@@ -124,6 +124,7 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
     ])
     .spacing(1)
     .areas(area);
+    let p = app.palette;
     let s = &app.snapshot;
     let total = s.counts();
     let checking = match (&app.checking, app.queued.len()) {
@@ -153,7 +154,7 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
         .into_iter()
         .map(|(k, v)| {
             Line::from(vec![
-                Span::styled(format!("{k:<10}"), Style::new().fg(ORANGE).bold()),
+                Span::styled(format!("{k:<10}"), Style::new().fg(p.accent).bold()),
                 Span::raw(v),
             ])
         })
@@ -168,12 +169,9 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
             for (k, d) in [hints.get(i), hints.get(i + half)].into_iter().flatten() {
                 spans.push(Span::styled(
                     format!("{:<9}", format!("<{k}>")),
-                    Style::new().fg(BORDER).bold(),
+                    Style::new().fg(p.frame).bold(),
                 ));
-                spans.push(Span::styled(
-                    format!("{d:<20}"),
-                    Style::new().fg(Color::Gray),
-                ));
+                spans.push(Span::styled(format!("{d:<20}"), Style::new().fg(p.muted)));
             }
             Line::from(spans)
         })
@@ -182,7 +180,7 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
 
     let logo_lines: Vec<Line> = LOGO
         .iter()
-        .map(|l| Line::styled(*l, Style::new().fg(ORANGE).bold()))
+        .map(|l| Line::styled(*l, Style::new().fg(p.accent).bold()))
         .collect();
     frame.render_widget(Paragraph::new(logo_lines), logo);
 }
@@ -212,9 +210,9 @@ fn key_hints(view: &View) -> Vec<(&'static str, &'static str)> {
 
 fn draw_prompt(frame: &mut Frame, app: &App, area: Rect) {
     let (icon, color) = if app.mode == Mode::Filter {
-        ("/", Color::LightBlue)
+        ("/", app.palette.info)
     } else {
-        (":", ORANGE)
+        (":", app.palette.accent)
     };
     let line = Line::from(vec![
         Span::styled(format!(" {icon}"), Style::new().fg(color).bold()),
@@ -228,12 +226,13 @@ fn draw_prompt(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn draw_table(frame: &mut Frame, app: &mut App, area: Rect) {
+    let p = app.palette;
     let items = app.items();
     let view = app.view().clone();
     let (header, widths): (Vec<&str>, Vec<Constraint>) = match &view {
         View::Quests => (
             vec![
-                "NAME", "TITLE", "MODULES", "PROGRESS", "DONE", "STATUS", "AGE",
+                "QUEST", "TITLE", "MODULES", "PROGRESS", "DONE", "STATUS", "AGE",
             ],
             vec![
                 len(20),
@@ -247,7 +246,7 @@ fn draw_table(frame: &mut Frame, app: &mut App, area: Rect) {
         ),
         View::Modules(None) => (
             vec![
-                "QUEST", "NAME", "TITLE", "LESSONS", "PROGRESS", "DONE", "STATUS", "AGE",
+                "QUEST", "MODULE", "TITLE", "LESSONS", "PROGRESS", "DONE", "STATUS", "AGE",
             ],
             vec![
                 len(16),
@@ -262,7 +261,7 @@ fn draw_table(frame: &mut Frame, app: &mut App, area: Rect) {
         ),
         View::Modules(Some(_)) => (
             vec![
-                "NAME", "TITLE", "LESSONS", "PROGRESS", "DONE", "STATUS", "AGE",
+                "MODULE", "TITLE", "LESSONS", "PROGRESS", "DONE", "STATUS", "AGE",
             ],
             vec![
                 len(26),
@@ -275,7 +274,7 @@ fn draw_table(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
         ),
         View::Lessons(_) => (
-            vec!["#", "NAME", "SUMMARY", "PROGRESS", "DONE", "STATUS"],
+            vec!["#", "LESSON", "SUMMARY", "PROGRESS", "DONE", "STATUS"],
             vec![
                 len(3),
                 len(30),
@@ -286,7 +285,7 @@ fn draw_table(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
         ),
         View::Exercises(..) => (
-            vec!["NAME", "STATUS", "MESSAGE"],
+            vec!["EXERCISE", "STATUS", "MESSAGE"],
             vec![len(44), len(9), Constraint::Fill(1)],
         ),
     };
@@ -295,7 +294,8 @@ fn draw_table(frame: &mut Frame, app: &mut App, area: Rect) {
         .map(|item| {
             let badge = app.badge(item);
             let cells = cells(item, badge, &view);
-            Row::new(cells.into_iter().map(Cell::from)).style(Style::new().fg(badge_color(badge)))
+            Row::new(cells.into_iter().map(Cell::from))
+                .style(Style::new().fg(badge_color(p, badge)))
         })
         .collect();
 
@@ -306,17 +306,17 @@ fn draw_table(frame: &mut Frame, app: &mut App, area: Rect) {
         View::Exercises(k, n) => ("Exercises", format!("{k}#{n}")),
     };
     let mut title = vec![
-        Span::styled(format!(" {resource}"), Style::new().fg(Color::Cyan).bold()),
-        Span::styled(format!("({scope})"), Style::new().fg(Color::Magenta).bold()),
+        Span::styled(format!(" {resource}"), Style::new().fg(p.title).bold()),
+        Span::styled(format!("({scope})"), Style::new().fg(p.scope).bold()),
         Span::styled(
             format!("[{}] ", items.len()),
-            Style::new().fg(Color::White).bold(),
+            Style::new().fg(p.heading).bold(),
         ),
     ];
     if !app.filter.is_empty() {
         title.push(Span::styled(
             format!("</{}> ", app.filter),
-            Style::new().fg(Color::LightBlue),
+            Style::new().fg(p.info),
         ));
     }
     if let Some((key, desc)) = app.sort {
@@ -328,15 +328,15 @@ fn draw_table(frame: &mut Frame, app: &mut App, area: Rect) {
         };
         title.push(Span::styled(
             format!("<sort:{name}{}> ", if desc { "↓" } else { "↑" }),
-            Style::new().fg(Color::DarkGray),
+            Style::new().fg(p.faint),
         ));
     }
     let empty_hint = rows.is_empty();
     let block = Block::bordered()
-        .border_style(Style::new().fg(BORDER))
+        .border_style(Style::new().fg(p.frame))
         .title(Line::from(title).centered());
     let table = Table::new(rows, widths)
-        .header(Row::new(header).style(Style::new().fg(Color::White).bold()))
+        .header(Row::new(header).style(Style::new().fg(p.heading).bold()))
         .block(block)
         .column_spacing(2)
         .row_highlight_style(Style::new().add_modifier(Modifier::REVERSED));
@@ -352,7 +352,7 @@ fn draw_table(frame: &mut Frame, app: &mut App, area: Rect) {
             _ => "No quests yet: generate one with the /learn skill (see skills/learn).",
         };
         let inner = area.inner(ratatui::layout::Margin::new(2, 2));
-        frame.render_widget(Paragraph::new(hint).fg(Color::DarkGray), inner);
+        frame.render_widget(Paragraph::new(hint).fg(p.faint), inner);
     }
 }
 
@@ -430,34 +430,37 @@ fn bar(c: Counts) -> String {
     )
 }
 
-fn badge_color(badge: Badge) -> Color {
+fn badge_color(p: &Palette, badge: Badge) -> Color {
     match badge {
-        Badge::Checking => ORANGE,
-        Badge::Queued => Color::Magenta,
-        Badge::Status(Status::Completed) | Badge::Exercise(ExerciseStatus::Passed) => Color::Green,
-        Badge::Status(Status::InProgress) => Color::Cyan,
-        Badge::Status(Status::NotStarted) | Badge::Exercise(ExerciseStatus::Todo) => Color::Gray,
-        Badge::Status(Status::Pending) | Badge::Exercise(ExerciseStatus::Ignored) => {
-            Color::DarkGray
-        }
-        Badge::Status(Status::Stale) => Color::Yellow,
+        Badge::Checking => p.accent,
+        Badge::Queued => p.queued,
+        Badge::Status(Status::Completed) | Badge::Exercise(ExerciseStatus::Passed) => p.completed,
+        Badge::Status(Status::InProgress) => p.in_progress,
+        Badge::Status(Status::NotStarted) | Badge::Exercise(ExerciseStatus::Todo) => p.muted,
+        Badge::Status(Status::Pending) | Badge::Exercise(ExerciseStatus::Ignored) => p.faint,
+        Badge::Status(Status::Stale) => p.stale,
         Badge::Status(Status::BuildFailed | Status::Invalid)
-        | Badge::Exercise(ExerciseStatus::Failed) => Color::Red,
+        | Badge::Exercise(ExerciseStatus::Failed) => p.failed,
     }
 }
 
+fn base(p: &Palette) -> Style {
+    Style::new().fg(p.fg).bg(p.bg)
+}
+
 fn draw_crumbs(frame: &mut Frame, app: &App, area: Rect) {
+    let p = app.palette;
     let last = app.stack.len() - 1;
     let spans: Vec<Span> = app
         .stack
         .iter()
         .enumerate()
         .flat_map(|(i, v)| {
-            let bg = if i == last { ORANGE } else { BORDER };
+            let bg = if i == last { p.accent } else { p.frame };
             [
                 Span::styled(
                     format!(" <{}> ", v.crumb()),
-                    Style::new().bg(bg).fg(Color::Black).bold(),
+                    Style::new().bg(bg).fg(p.on_frame).bold(),
                 ),
                 Span::raw(" "),
             ]
@@ -471,9 +474,9 @@ fn draw_flash(frame: &mut Frame, app: &App, area: Rect) {
         return;
     };
     let style = if flash.error {
-        Style::new().fg(Color::Red).bold()
+        Style::new().fg(app.palette.failed).bold()
     } else {
-        Style::new().fg(Color::LightBlue)
+        Style::new().fg(app.palette.info)
     };
     frame.render_widget(
         Paragraph::new(Line::styled(format!(" {}", flash.text), style)),
@@ -482,18 +485,19 @@ fn draw_flash(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn draw_overlay(frame: &mut Frame, app: &mut App) {
+    let p = app.palette;
     let area = centered(frame.area(), 90, 85);
     let lines: Vec<Line> = match &app.overlay.as_ref().expect("checked by caller").kind {
         OverlayKind::Help => HELP
             .iter()
             .map(|(k, d)| {
                 Line::from(vec![
-                    Span::styled(format!("  {k:<14}"), Style::new().fg(BORDER).bold()),
+                    Span::styled(format!("  {k:<14}"), Style::new().fg(p.frame).bold()),
                     Span::raw(*d),
                 ])
             })
             .collect(),
-        OverlayKind::Text(text) => text.iter().map(|l| describe_line(l)).collect(),
+        OverlayKind::Text(text) => text.iter().map(|l| describe_line(p, l)).collect(),
         OverlayKind::Log(key) => app.log_lines(key).into_iter().map(Line::raw).collect(),
     };
     let overlay = app.overlay.as_mut().expect("checked by caller");
@@ -505,31 +509,29 @@ fn draw_overlay(frame: &mut Frame, app: &mut App) {
     let title = Line::from(vec![
         Span::styled(
             format!(" {} ", overlay.title),
-            Style::new().fg(Color::Cyan).bold(),
+            Style::new().fg(p.title).bold(),
         ),
-        Span::styled(
-            "<esc> close  <j/k> scroll ",
-            Style::new().fg(Color::DarkGray),
-        ),
+        Span::styled("<esc> close  <j/k> scroll ", Style::new().fg(p.faint)),
     ]);
     let block = Block::bordered()
-        .border_style(Style::new().fg(BORDER))
+        .border_style(Style::new().fg(p.frame))
         .title(title.centered());
     frame.render_widget(Clear, area);
     frame.render_widget(
         Paragraph::new(lines)
             .block(block)
+            .style(base(p))
             .scroll((overlay.scroll, 0)),
         area,
     );
 }
 
 /// `Key:        value` lines get a coloured key, like `kubectl describe`.
-fn describe_line(line: &str) -> Line<'static> {
+fn describe_line(p: &Palette, line: &str) -> Line<'static> {
     match line.split_once(':') {
         Some((key, rest)) if !key.starts_with(' ') && key.len() < 13 && !key.is_empty() => {
             Line::from(vec![
-                Span::styled(format!("{key}:"), Style::new().fg(ORANGE).bold()),
+                Span::styled(format!("{key}:"), Style::new().fg(p.accent).bold()),
                 Span::raw(rest.to_string()),
             ])
         }

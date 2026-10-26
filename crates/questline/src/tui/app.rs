@@ -1,5 +1,6 @@
 //! Dashboard state and key handling; no drawing (see `ui.rs`) and no terminal (see `mod.rs`).
 
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -27,6 +28,8 @@ use ratatui::crossterm::event::KeyEvent;
 use ratatui::crossterm::event::KeyModifiers;
 use ratatui::widgets::TableState;
 
+use super::theme::Palette;
+
 /// Live output kept per module while it is checked.
 const MAX_LIVE_LINES: usize = 5_000;
 
@@ -47,6 +50,16 @@ impl View {
             Self::Modules(Some(q)) => format!("modules:{q}"),
             Self::Lessons(key) => format!("lessons:{}", key.module),
             Self::Exercises(_, n) => format!("exercises:{n}"),
+        }
+    }
+
+    /// The parent view's row that drills down into this view.
+    fn entered_from(&self) -> Option<Selection> {
+        match self {
+            Self::Quests | Self::Modules(None) => None,
+            Self::Modules(Some(q)) => Some(Selection::Quest(q.clone())),
+            Self::Lessons(k) => Some(Selection::Module(k.clone())),
+            Self::Exercises(k, n) => Some(Selection::Lesson(k.clone(), *n)),
         }
     }
 }
@@ -184,8 +197,23 @@ fn evaluated_at(m: &Module) -> Option<i64> {
     m.progress.as_ref().map(|p| p.evaluated_at_ms)
 }
 
+/// Without a sort key: quests, and modules within their quest, by name with completed ones
+/// last; lessons by number.
+fn default_order(a: &Item, b: &Item) -> Ordering {
+    let done = |s: Status| s == Status::Completed;
+    match (a, b) {
+        (Item::Quest(x), Item::Quest(y)) => {
+            (done(x.status()), &x.id).cmp(&(done(y.status()), &y.id))
+        }
+        (Item::Module(x), Item::Module(y)) => (&x.key.quest, done(x.status()), &x.key.module)
+            .cmp(&(&y.key.quest, done(y.status()), &y.key.module)),
+        (Item::Lesson(_, x), Item::Lesson(_, y)) => x.number.cmp(&y.number),
+        _ => Ordering::Equal,
+    }
+}
+
 /// The selected row, detached from the snapshot so handlers can mutate the app.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum Selection {
     Quest(String),
     Module(ModuleKey),
@@ -255,11 +283,17 @@ pub struct App {
     pub queued: Vec<ModuleKey>,
     pub jobs_in_flight: usize,
     pub live: HashMap<ModuleKey, Vec<String>>,
+    pub palette: &'static Palette,
     jobs: Sender<Job>,
 }
 
 impl App {
-    pub fn new(ql: Arc<Questline>, snapshot: Snapshot, jobs: Sender<Job>) -> Self {
+    pub fn new(
+        ql: Arc<Questline>,
+        snapshot: Snapshot,
+        jobs: Sender<Job>,
+        palette: &'static Palette,
+    ) -> Self {
         let mut table = TableState::default();
         table.select(Some(0));
         Self {
@@ -277,6 +311,7 @@ impl App {
             queued: Vec::new(),
             jobs_in_flight: 0,
             live: HashMap::new(),
+            palette,
             jobs,
         }
     }
@@ -327,6 +362,7 @@ impl App {
             let needle = self.filter.to_lowercase();
             items.retain(|i| i.search_text().contains(&needle));
         }
+        items.sort_by(default_order);
         if let Some((key, desc)) = self.sort {
             items.sort_by(|a, b| {
                 let order = match key {
@@ -414,12 +450,24 @@ impl App {
         self.table.select(Some(i));
     }
 
+    /// Selects `sel`'s row if it is shown, else keeps the cursor in range.
+    fn reselect(&mut self, sel: Option<Selection>) {
+        match sel.and_then(|sel| self.items().iter().position(|i| i.selection() == sel)) {
+            Some(i) => self.table.select(Some(i)),
+            None => self.clamp_selection(),
+        }
+    }
+
+    /// Rows can move (a module that completes sorts last), so the cursor follows its row.
+    fn set_snapshot(&mut self, snapshot: Snapshot) {
+        let sel = self.selected();
+        self.snapshot = snapshot;
+        self.reselect(sel);
+    }
+
     pub fn reload(&mut self) {
         match self.ql.sync() {
-            Ok(snapshot) => {
-                self.snapshot = snapshot;
-                self.clamp_selection();
-            }
+            Ok(snapshot) => self.set_snapshot(snapshot),
             Err(e) => self.flash_error(format!("reload failed: {e}")),
         }
     }
@@ -517,10 +565,7 @@ impl App {
             self.queued.clear();
         }
         match result {
-            Ok(snapshot) => {
-                self.snapshot = snapshot;
-                self.clamp_selection();
-            }
+            Ok(snapshot) => self.set_snapshot(snapshot),
             Err(e) => self.flash_error(format!("evaluation failed: {e}")),
         }
     }
@@ -652,8 +697,8 @@ impl App {
                 if !self.filter.is_empty() {
                     self.filter.clear();
                 } else if self.stack.len() > 1 {
-                    self.stack.pop();
-                    self.clamp_selection();
+                    let left = self.stack.pop().expect("checked above");
+                    self.reselect(left.entered_from());
                 } else if key.code == KeyCode::Char('q') {
                     self.flash("ctrl-c or :q quits");
                 }
@@ -1025,4 +1070,140 @@ fn describe_exercise(e: &ExerciseResult) -> Vec<String> {
         l.extend(msg.lines().map(String::from));
     }
     l
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use questline_core::questkit::ModuleManifest;
+    use questline_core::questkit::Outcome;
+
+    use super::super::theme::Theme;
+
+    fn module(quest: &str, id: &str, passed: &[bool], lessons: &[u8]) -> Module {
+        let exercises = passed
+            .iter()
+            .enumerate()
+            .map(|(i, p)| ExerciseResult {
+                lesson: 1,
+                name: format!("e01::ex{i}"),
+                status: if *p {
+                    ExerciseStatus::Passed
+                } else {
+                    ExerciseStatus::Todo
+                },
+                message: None,
+            })
+            .collect();
+        let lessons = lessons
+            .iter()
+            .map(|&number| Lesson {
+                number,
+                name: format!("l{number}"),
+                summary: String::new(),
+            })
+            .collect();
+        Module {
+            key: ModuleKey::new(quest, id),
+            path: PathBuf::new(),
+            manifest: Some(ModuleManifest {
+                title: id.into(),
+                summary: String::new(),
+                order: 1,
+                requires: vec![],
+                lessons,
+            }),
+            problems: vec![],
+            fingerprint: "f".into(),
+            progress: Some(Progress::new("f".into(), Outcome::Tested, exercises)),
+        }
+    }
+
+    fn snapshot(zeta_done: bool) -> Snapshot {
+        let quest = |id: &str, modules| Quest {
+            id: id.into(),
+            path: PathBuf::new(),
+            manifest: None,
+            problems: vec![],
+            modules,
+        };
+        Snapshot {
+            root: PathBuf::new(),
+            quests: vec![
+                quest(
+                    "b",
+                    vec![
+                        module("b", "zeta", &[zeta_done], &[1]),
+                        module("b", "alpha", &[true], &[1]),
+                        module("b", "mid", &[true, false], &[3, 1, 2]),
+                    ],
+                ),
+                quest("a", vec![module("a", "only", &[true], &[1])]),
+            ],
+        }
+    }
+
+    fn app() -> App {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let ql = Arc::new(Questline::open(root).unwrap());
+        let (tx, _rx) = std::sync::mpsc::channel();
+        App::new(ql, snapshot(false), tx, Theme::Default.palette())
+    }
+
+    fn rows(app: &App) -> Vec<String> {
+        app.items()
+            .iter()
+            .map(|i| match i {
+                Item::Module(m) => m.key.to_string(),
+                other => other.name().to_string(),
+            })
+            .collect()
+    }
+
+    fn press(app: &mut App, code: KeyCode) {
+        app.on_key(KeyEvent::from(code));
+    }
+
+    #[test]
+    fn rows_are_grouped_by_quest_by_name_with_completed_last() {
+        let mut app = app();
+        assert_eq!(rows(&app), ["a/only", "b/mid", "b/zeta", "b/alpha"]);
+        app.command("quests");
+        assert_eq!(rows(&app), ["b", "a"]);
+        app.command("b/mid");
+        assert_eq!(rows(&app), ["l1", "l2", "l3"]);
+    }
+
+    #[test]
+    fn esc_returns_to_the_row_that_was_entered() {
+        let mut app = app();
+        press(&mut app, KeyCode::Char('G'));
+        press(&mut app, KeyCode::Up);
+        press(&mut app, KeyCode::Enter);
+        assert_eq!(*app.view(), View::Lessons(ModuleKey::new("b", "zeta")));
+        press(&mut app, KeyCode::Esc);
+        assert_eq!(
+            app.selected(),
+            Some(Selection::Module(ModuleKey::new("b", "zeta")))
+        );
+
+        app.command("quests");
+        press(&mut app, KeyCode::Down);
+        press(&mut app, KeyCode::Enter);
+        press(&mut app, KeyCode::Esc);
+        assert_eq!(app.selected(), Some(Selection::Quest("a".into())));
+    }
+
+    #[test]
+    fn the_cursor_follows_a_module_that_moves_when_it_completes() {
+        let mut app = app();
+        press(&mut app, KeyCode::Char('G'));
+        press(&mut app, KeyCode::Up);
+        app.on_eval_done(Ok(snapshot(true)));
+        assert_eq!(rows(&app), ["a/only", "b/mid", "b/alpha", "b/zeta"]);
+        assert_eq!(
+            app.selected(),
+            Some(Selection::Module(ModuleKey::new("b", "zeta")))
+        );
+    }
 }

@@ -23,6 +23,9 @@ struct Cli {
     /// the current directory with a quests/ directory, else the checkout this was built from.
     #[arg(long, global = true, value_name = "DIR")]
     root: Option<PathBuf>,
+    /// The dashboard's colours.
+    #[arg(long, env = "QUESTLINE_THEME", value_enum, default_value_t)]
+    theme: tui::Theme,
     #[command(subcommand)]
     command: Option<Command>,
 }
@@ -79,7 +82,7 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
     let root = find_root(cli.root)?;
     let ql = Questline::open(&root)?;
     match cli.command.unwrap_or(Command::Tui) {
-        Command::Tui => tui::run(ql)?,
+        Command::Tui => tui::run(ql, cli.theme)?,
         Command::Root => println!("{}", root.display()),
         Command::List { json } => {
             let snapshot = ql.sync()?;

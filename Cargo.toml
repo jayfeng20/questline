@@ -18,7 +18,7 @@ anyhow = "1"
 arrow-array = "60"
 arrow-buffer = "60"
 arrow-schema = "60"
-clap = { version = "4.6", features = ["derive"] }
+clap = { version = "4.6", features = ["derive", "env"] }
 parquet = { version = "60", default-features = false, features = ["arrow"] }
 ratatui = "0.30"
 serde = { version = "1", features = ["derive"] }
