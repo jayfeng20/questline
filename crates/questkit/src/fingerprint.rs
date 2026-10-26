@@ -3,12 +3,15 @@
 //!
 //! It hashes the path, size and mtime (not the content) of every file in the module directory
 //! plus the quest's workspace `Cargo.toml`. Skipped: `target/`, `course-data/` (lesson output),
-//! dot-files and dot-directories (`.quest/`, `.DS_Store`), and `Cargo.lock`, which cargo may
-//! rewrite during the check itself. A false "changed" costs one extra check; a false
+//! dot-files and dot-directories (`.quest/`, `.DS_Store`), `Cargo.lock`, which cargo may
+//! rewrite during the check itself, and `module.toml`, which no test reads (so reordering or
+//! retitling a module keeps its result). A false "changed" costs one extra check; a false
 //! "unchanged" would need a file edited without its size or mtime changing.
 
 use std::path::Path;
 use std::time::UNIX_EPOCH;
+
+use crate::manifest::MODULE_MANIFEST;
 
 const SKIPPED_DIRS: &[&str] = &["target", "course-data"];
 
@@ -46,7 +49,7 @@ fn walk(root: &Path, dir: &Path, out: &mut Vec<String>) -> std::io::Result<()> {
                 continue;
             }
             walk(root, &path, out)?;
-        } else if name != "Cargo.lock" {
+        } else if name != "Cargo.lock" && !(dir == root && name == MODULE_MANIFEST) {
             let rel = path
                 .strip_prefix(root)
                 .unwrap_or(&path)
@@ -104,6 +107,7 @@ mod tests {
             "course-data/out.bin",
             ".quest/progress.json",
             "Cargo.lock",
+            "module.toml",
         ] {
             let path = module.join(ignored);
             fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -112,7 +116,7 @@ mod tests {
         assert_eq!(
             fingerprint(&module).unwrap(),
             before,
-            "build output and state do not count"
+            "build output, state and metadata do not count"
         );
 
         fs::write(module.join("src/exercises/e01_x.rs"), "42 // solved").unwrap();

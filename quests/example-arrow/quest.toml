@@ -1,5 +1,6 @@
 contract = 1
 title = "Apache Arrow in Rust (example)"
 summary = "A sample quest: one module on arrow-rs arrays, encodings and RecordBatch, pinned to arrow 60.0.0"
+order = 1
 tags = ["arrow", "arrow-rs", "columnar", "example"]
 example = true

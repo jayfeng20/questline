@@ -21,13 +21,18 @@ pub const QUESTS_DIR: &str = "quests";
 /// Module ids that cannot be Cargo package names.
 const RESERVED_MODULE_IDS: &[&str] = &["alloc", "core", "proc-macro", "std", "test"];
 
-/// Every quest directory under `<root>/quests/`, sorted by id. Never fails as a whole: a broken
-/// quest is returned with its problems.
+/// Every quest directory under `<root>/quests/`, by `order` with examples after the others,
+/// then id. Never fails as a whole: a broken quest is returned with its problems, last.
 pub fn scan(root: &Path) -> std::io::Result<Vec<Quest>> {
-    let quests = subdirs(&root.join(QUESTS_DIR))?
+    let mut quests: Vec<Quest> = subdirs(&root.join(QUESTS_DIR))?
         .into_iter()
         .map(|dir| load_quest(&dir))
         .collect();
+    quests.sort_by_key(|q| {
+        q.manifest
+            .as_ref()
+            .map_or((true, u32::MAX), |m| (m.example, m.order))
+    });
     Ok(quests)
 }
 
@@ -197,7 +202,7 @@ pub(crate) mod tests {
         let files = [
             (
                 "quest.toml",
-                "contract = 1\ntitle = \"Quest\"\nsummary = \"s\"\n".to_string(),
+                "contract = 1\ntitle = \"Quest\"\nsummary = \"s\"\norder = 1\n".to_string(),
             ),
             (
                 "Cargo.toml",

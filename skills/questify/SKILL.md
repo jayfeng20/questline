@@ -27,8 +27,8 @@ Read, before writing anything:
 
 1. **Parse.** `--manual` selects manualsort, `--auto` or no flag autosort. No topic: ask for one.
 2. **Place.** Follow `references/placement.md`: list the quests (`scripts/quests.sh`), choose
-   the quest (existing or new) and the module id, asking first when the mode or an ambiguity
-   says so.
+   the quest (existing or new), the module id and its place in learning order, asking first
+   when the mode or an ambiguity says so.
 3. **Scope.** Decide whether the topic fits in one module of 3–8 lessons.
    - Fits (e.g. "tokio worker threads", "parquet writing", "serde enums"): go to 4.
    - Too broad (e.g. "tokio", "lance", "rust async"): build the course map in
@@ -48,8 +48,10 @@ Read, before writing anything:
    each uses only vocabulary from earlier ones (and from the modules in `requires`).
 6. **Scaffold.** `scripts/scaffold.sh quest <quest>` (new quest only; then fill `quest.toml`
    with title, summary and tags), then `scripts/scaffold.sh module <quest> <module>`. Both
-   refuse to overwrite. Fill `module.toml` (title, summary, `requires`, one `[[lesson]]` per
-   lesson) and delete the template's sample lesson files.
+   refuse to overwrite, and both put the new quest or module last in learning order: if it
+   belongs earlier, `questline order <quest>[/<module>] <n>` (placement.md §4). Fill
+   `module.toml` (title, summary, `requires`, one `[[lesson]]` per lesson) and delete the
+   template's sample lesson files.
 7. **Write each lesson** in this order: lesson file → exercise stubs → tests → solutions →
    fixtures in `data/` via `scripts/fetch-data.sh`. Follow course-spec.md exactly.
 8. **Verify — mandatory, do not skip.** From the module directory:

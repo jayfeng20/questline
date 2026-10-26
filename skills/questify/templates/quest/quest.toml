@@ -3,5 +3,8 @@
 contract = 1
 title = "__TITLE__"
 summary = "__SUMMARY__"
+# Position among your quests in learning order (1 = learn first). Move it with
+# `questline order __QUEST__ <n>`, which renumbers the others.
+order = __ORDER__
 # Words /questify autosort matches new topics against (crate names, the subject).
 tags = []

@@ -12,7 +12,7 @@ optional.
 
 ```
 quests/<quest>/
-├── quest.toml                 # contract = 1, title, summary, tags
+├── quest.toml                 # contract = 1, title, summary, order, tags
 ├── Cargo.toml                 # [workspace] members = ["modules/*"]; [workspace.dependencies] pins; [profile.dev]
 ├── README.md                  # course map: every module of the subject, generated or not
 └── modules/<module>/

@@ -22,7 +22,7 @@ Skip quests with `example = true`. A quest **matches** when any of these holds:
    tokio's);
 2. the topic is a sub-area of its subject or appears in its `tags`;
 3. its README course map lists the topic as a module not generated yet (then reuse that row's
-   module id and `order`).
+   module id, and its place in the map for §4).
 
 Exactly one match → **place it there**. Several → the one with the most shared primary crates;
 still tied → treat as ambiguous. None → **a new quest**, named after the subject (`tokio`,
@@ -58,5 +58,20 @@ For a new quest also confirm the quest id and title. Then scaffold:
 
 ```bash
 scripts/scaffold.sh quest <quest>              # only for a new quest; fill quest.toml
-scripts/scaffold.sh module <quest> <module>    # picks the next free `order`
+scripts/scaffold.sh module <quest> <module>    # goes last: `order` = last + 1
 ```
+
+## 4. Position
+
+Quests and a quest's modules are listed in **learning order** (`order`, 1 first). Put the new
+module after the modules whose concepts it uses (its `requires`, and anything the learner must
+know first) and before the ones that build on it. Scaffolding puts it last; if that is right,
+or the order does not matter, leave it. Otherwise move it, which renumbers the others:
+
+```bash
+questline order <quest>/<module> <n>   # e.g. `parquet-reading` before `parquet-writing`
+questline order <quest> <n>            # a new quest the learner should take earlier (rust-std before tokio)
+```
+
+`scripts/quests.sh` prints the current order. Keep the quest README's course map in the same
+order, and say in the hand-over where the module went and why.

@@ -23,6 +23,8 @@ pub struct QuestManifest {
     pub contract: u32,
     pub title: String,
     pub summary: String,
+    /// Position among the quests, in learning order; quests are listed by ascending `order`.
+    pub order: u32,
     #[serde(default)]
     pub tags: Vec<String>,
     /// A published sample; `/questify` autosort never adds modules to it.
@@ -35,7 +37,7 @@ pub struct QuestManifest {
 pub struct ModuleManifest {
     pub title: String,
     pub summary: String,
-    /// Position within the quest; modules are listed by ascending `order`.
+    /// Position within the quest, in learning order; modules are listed by ascending `order`.
     pub order: u32,
     /// Module ids (same quest) whose vocabulary this module assumes.
     #[serde(default)]
@@ -206,12 +208,15 @@ summary = "two"
     #[test]
     fn quest_manifest_requires_the_current_contract() {
         let q: QuestManifest =
-            toml::from_str("contract = 2\ntitle = \"t\"\nsummary = \"s\"").unwrap();
+            toml::from_str("contract = 2\ntitle = \"t\"\nsummary = \"s\"\norder = 1").unwrap();
         assert!(q.validate().is_err());
         let unknown = toml::from_str::<QuestManifest>(
-            "contract = 1\ntitle = \"t\"\nsummary = \"s\"\nowner = \"x\"",
+            "contract = 1\ntitle = \"t\"\nsummary = \"s\"\norder = 1\nowner = \"x\"",
         );
         assert!(unknown.is_err(), "unknown keys are rejected");
+        let unordered =
+            toml::from_str::<QuestManifest>("contract = 1\ntitle = \"t\"\nsummary = \"s\"");
+        assert!(unordered.is_err(), "order is required");
     }
 
     #[test]

@@ -64,6 +64,7 @@ Unknown keys are errors, so typos do not pass silently.
 | `contract` | integer | yes | `1`, this document |
 | `title` | string | yes | shown in the dashboard |
 | `summary` | string | yes | one line: what the quest covers, pinned versions |
+| `order` | integer | yes | position among the quests in learning order (§3.3) |
 | `tags` | array of strings | no | crate names and subjects; `/questify` autosort matches topics against them |
 | `example` | bool | no | a published sample: autosort never adds modules to it |
 
@@ -73,7 +74,7 @@ Unknown keys are errors, so typos do not pass silently.
 |-----|------|----------|---------|
 | `title` | string | yes | |
 | `summary` | string | yes | one line, verb-first: what the learner will be able to do |
-| `order` | integer | yes | position in the course map; `questline list` lists modules by it |
+| `order` | integer | yes | position among the quest's modules in learning order (§3.3) |
 | `requires` | array of module ids | no | modules of this quest whose vocabulary this one assumes |
 | `[[lesson]]` | array of tables | yes, ≥ 1 | the syllabus, in order |
 | `lesson.number` | integer | yes | 1, 2, 3, … with no gaps |
@@ -82,6 +83,14 @@ Unknown keys are errors, so typos do not pass silently.
 
 `module.toml` is the only syllabus: the runner reads it at run time, so a lesson is added by
 adding its files and its `[[lesson]]` entry, and wiring it into `src/lessons/mod.rs`.
+
+### 3.3 Learning order
+
+`order` is the order to learn things in: 1 first, each building on the ones before. The
+dashboard and `questline list` list quests by it (examples after the others) and each quest's
+modules by it, ties by id. A new quest or module goes last (largest `order` + 1).
+`questline order <quest>[/<module>] <n>` (`Questline::set_order` in the API) moves one to
+position `n` and renumbers the others `1, 2, 3, …`, rewriting only the manifests that change.
 
 ## 4. Commands
 
@@ -139,9 +148,10 @@ over its modules.
 
 **Fingerprint.** FNV-1a over the sorted `(relative path, size, mtime)` of every file in the
 module directory, plus the quest's workspace `Cargo.toml`, skipping `target/`, `course-data/`,
-dot-files and dot-directories (`.quest/`, `.venv/`) and `Cargo.lock`. A module whose current
+dot-files and dot-directories (`.quest/`, `.venv/`), `Cargo.lock` and `module.toml` (no test
+reads it, so reordering or retitling a module keeps its result). A module whose current
 fingerprint equals its last evaluation's is **fresh**: its result is reused and no cargo runs.
-Any edit (an exercise, a fixture, a dependency pin) makes it **stale**.
+Any other edit (an exercise, a fixture, a dependency pin) makes it **stale**.
 
 ## 6. Status
 

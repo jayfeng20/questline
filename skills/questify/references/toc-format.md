@@ -33,8 +33,10 @@ Rules:
 - The table of contents *is* the quest's course map: a broad topic is one quest, and each row
   is one module of it. After the user answers, place the quest (`references/placement.md`:
   an existing quest for the subject, or a new one), generate one module per chosen row under
-  `modules/<module>/` (the row's name is the module id; its number is `order`), and copy the
-  whole table into the quest README's course map with a status column (generated / not
+  `modules/<module>/` (the row's name is the module id; its number is its place in learning
+  order: generate rows in map order, and move a row generated after a later one into place
+  with `questline order <quest>/<module> <n>`), and copy the whole table into the quest
+  README's course map with a status column (generated / not
   generated), so a later `/questify <topic>` can add the remaining rows.
 
 ## Example: `/questify tokio`

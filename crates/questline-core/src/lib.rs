@@ -16,6 +16,7 @@ mod discover;
 mod eval;
 mod ide;
 mod model;
+mod order;
 mod store;
 
 use std::path::Path;
@@ -52,6 +53,8 @@ pub enum Error {
     },
     #[error("registry {0}")]
     Registry(String),
+    #[error("{0}")]
+    Invalid(String),
 }
 
 impl Error {
@@ -167,6 +170,16 @@ impl Questline {
                 }),
             }
         }
+        self.sync()
+    }
+
+    /// Moves a quest among the quests (an example among the examples), or a module within its
+    /// quest, to `position` (1-based, clamped), and renumbers the others `1, 2, 3, …` in their
+    /// current order. Only manifests whose `order` changes are rewritten, comments kept.
+    pub fn set_order(&self, target: &Target, position: u32) -> Result<Snapshot> {
+        let quests = discover::scan(&self.root)
+            .map_err(|e| Error::io(format!("scan {}", self.root.display()), e))?;
+        order::set_order(&quests, target, position)?;
         self.sync()
     }
 

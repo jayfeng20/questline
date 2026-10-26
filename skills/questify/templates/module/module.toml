@@ -1,7 +1,8 @@
 # The module's manifest (questline contract): the runner and the dashboard read the syllabus here.
 title = "__TITLE__"
 summary = "__SUMMARY__"
-# Position in the quest's course map; the dashboard lists modules by it.
+# Position in the quest's learning order (1 = learn first). Move it with
+# `questline order __QUEST__/__PACKAGE__ <n>`, which renumbers the others.
 order = __ORDER__
 # Ids of modules in this quest whose vocabulary this one assumes.
 requires = []

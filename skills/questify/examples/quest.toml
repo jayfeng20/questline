@@ -3,5 +3,6 @@
 contract = 1
 title = "questify skill examples"
 summary = "Verified /questify output, one module per lesson archetype: std and tokio (arrow/parquet 59.3.0, tokio 1.54.1), Lance 13.0.0"
+order = 1
 tags = ["example", "std", "tokio", "arrow", "parquet", "lance"]
 example = true

@@ -59,6 +59,7 @@ impl FromStr for Target {
 #[derive(Debug, Clone, Serialize)]
 pub struct Snapshot {
     pub root: PathBuf,
+    /// By `order` (examples after the others), then id.
     pub quests: Vec<Quest>,
 }
 

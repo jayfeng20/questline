@@ -197,16 +197,17 @@ fn evaluated_at(m: &Module) -> Option<i64> {
     m.progress.as_ref().map(|p| p.evaluated_at_ms)
 }
 
-/// Without a sort key: quests, and modules within their quest, by name with completed ones
-/// last; lessons by number.
-fn default_order(a: &Item, b: &Item) -> Ordering {
-    let done = |s: Status| s == Status::Completed;
+/// Without a sort key rows keep the snapshot's learning order (`order` in the manifests), with
+/// completed quests, and completed modules within their quest, moved last; lessons by number.
+/// Relies on a stable sort.
+fn default_order(s: &Snapshot, a: &Item, b: &Item) -> Ordering {
+    let done = |st: Status| st == Status::Completed;
+    let rank = |quest: &str| s.quests.iter().position(|q| q.id == quest);
     match (a, b) {
-        (Item::Quest(x), Item::Quest(y)) => {
-            (done(x.status()), &x.id).cmp(&(done(y.status()), &y.id))
+        (Item::Quest(x), Item::Quest(y)) => done(x.status()).cmp(&done(y.status())),
+        (Item::Module(x), Item::Module(y)) => {
+            (rank(&x.key.quest), done(x.status())).cmp(&(rank(&y.key.quest), done(y.status())))
         }
-        (Item::Module(x), Item::Module(y)) => (&x.key.quest, done(x.status()), &x.key.module)
-            .cmp(&(&y.key.quest, done(y.status()), &y.key.module)),
         (Item::Lesson(_, x), Item::Lesson(_, y)) => x.number.cmp(&y.number),
         _ => Ordering::Equal,
     }
@@ -362,7 +363,7 @@ impl App {
             let needle = self.filter.to_lowercase();
             items.retain(|i| i.search_text().contains(&needle));
         }
-        items.sort_by(default_order);
+        items.sort_by(|a, b| default_order(s, a, b));
         if let Some((key, desc)) = self.sort {
             items.sort_by(|a, b| {
                 let order = match key {
@@ -1119,6 +1120,7 @@ mod tests {
         }
     }
 
+    /// In learning order, as `sync` returns it.
     fn snapshot(zeta_done: bool) -> Snapshot {
         let quest = |id: &str, modules| Quest {
             id: id.into(),
@@ -1165,9 +1167,9 @@ mod tests {
     }
 
     #[test]
-    fn rows_are_grouped_by_quest_by_name_with_completed_last() {
+    fn rows_keep_learning_order_with_completed_last() {
         let mut app = app();
-        assert_eq!(rows(&app), ["a/only", "b/mid", "b/zeta", "b/alpha"]);
+        assert_eq!(rows(&app), ["b/zeta", "b/mid", "b/alpha", "a/only"]);
         app.command("quests");
         assert_eq!(rows(&app), ["b", "a"]);
         app.command("b/mid");
@@ -1177,14 +1179,13 @@ mod tests {
     #[test]
     fn esc_returns_to_the_row_that_was_entered() {
         let mut app = app();
-        press(&mut app, KeyCode::Char('G'));
-        press(&mut app, KeyCode::Up);
+        press(&mut app, KeyCode::Down);
         press(&mut app, KeyCode::Enter);
-        assert_eq!(*app.view(), View::Lessons(ModuleKey::new("b", "zeta")));
+        assert_eq!(*app.view(), View::Lessons(ModuleKey::new("b", "mid")));
         press(&mut app, KeyCode::Esc);
         assert_eq!(
             app.selected(),
-            Some(Selection::Module(ModuleKey::new("b", "zeta")))
+            Some(Selection::Module(ModuleKey::new("b", "mid")))
         );
 
         app.command("quests");
@@ -1197,10 +1198,8 @@ mod tests {
     #[test]
     fn the_cursor_follows_a_module_that_moves_when_it_completes() {
         let mut app = app();
-        press(&mut app, KeyCode::Char('G'));
-        press(&mut app, KeyCode::Up);
         app.on_eval_done(Ok(snapshot(true)));
-        assert_eq!(rows(&app), ["a/only", "b/mid", "b/alpha", "b/zeta"]);
+        assert_eq!(rows(&app), ["b/mid", "b/zeta", "b/alpha", "a/only"]);
         assert_eq!(
             app.selected(),
             Some(Selection::Module(ModuleKey::new("b", "zeta")))

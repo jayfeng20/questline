@@ -68,6 +68,7 @@ Or from the dashboard: select the module, `e` to open it in your IDE, `r` on a l
 | `questline eval [quest[/module]…] [--force] [--json]` | check the modules whose files changed; the rest reuse their cached result |
 | `questline open <quest[/module]> [--lesson N]` | a new IDE window rooted at the module (`$QUESTLINE_IDE`, else `code`, `cursor`, `zed`, …) |
 | `questline validate [dir…]` | check quests against the contract |
+| `questline order <quest[/module]> <n>` | move it to position `n` in learning order, renumbering the others |
 
 ## Write a quest
 
@@ -99,7 +100,8 @@ docs/contract.md        what a quest must look like and do to be registered
 ```
 
 `questline-core` is UI-agnostic: a `Questline` handle (`Send + Sync`) with `sync()`,
-`evaluate(targets, force, on_event)` and `open_in_ide(target, lesson)`, returning serde-serializable
+`evaluate(targets, force, on_event)`, `set_order(target, position)` and
+`open_in_ide(target, lesson)`, returning serde-serializable
 snapshots and streaming `EvalEvent`s. The dashboard runs it on a worker thread; a native macOS app
 can link the same crate (e.g. through UniFFI) or drive `questline list --json` / `eval --json`.
 

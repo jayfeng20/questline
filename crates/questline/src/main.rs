@@ -64,6 +64,14 @@ enum Command {
     },
     /// Check quest directories against the contract (default: every quest under the root).
     Validate { paths: Vec<PathBuf> },
+    /// Move a quest or module to a position in learning order and renumber the others.
+    Order {
+        /// `quest` or `quest/module`.
+        target: String,
+        /// 1 = learn first; past the end = last.
+        #[arg(value_parser = clap::value_parser!(u32).range(1..))]
+        position: u32,
+    },
     /// Print the questline root.
     Root,
 }
@@ -173,6 +181,26 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             let target: Target = target.parse().unwrap_or(Target::All);
             let launch = ql.open_in_ide(&target, lesson)?;
             println!("opened {} in `{}`", launch.dir.display(), launch.editor);
+        }
+        Command::Order { target, position } => {
+            let target: Target = target.parse().unwrap_or(Target::All);
+            let snapshot = ql.set_order(&target, position)?;
+            let rows: Vec<(u32, &str)> = match &target {
+                Target::Module(key) => snapshot
+                    .quest(&key.quest)
+                    .into_iter()
+                    .flat_map(|q| &q.modules)
+                    .map(|m| (m.order(), m.key.module.as_str()))
+                    .collect(),
+                _ => snapshot
+                    .quests
+                    .iter()
+                    .filter_map(|q| Some((q.manifest.as_ref()?.order, q.id.as_str())))
+                    .collect(),
+            };
+            for (order, id) in rows {
+                println!("{order:>3}  {id}");
+            }
         }
         Command::Validate { paths } => {
             let dirs = if paths.is_empty() {
