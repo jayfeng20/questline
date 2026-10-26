@@ -5,6 +5,6 @@ sync, with nothing else to update. A quest is a Cargo workspace whose member cra
 `modules/` are its sub-courses; [`docs/contract.md`](../docs/contract.md) is the full contract,
 and `questline validate` checks a quest against it.
 
-Write quests with the `/learn` skill ([`skills/learn`](../skills/learn)), which places each topic
-into the quest on the same subject or starts a new one. Everything in this directory except
-`example-arrow/` is gitignored, so your own quests and progress stay local.
+Write quests with the `/questify` skill ([`skills/questify`](../skills/questify)), which places
+each topic into the quest on the same subject or starts a new one. Everything in this directory
+except `example-arrow/` is gitignored, so your own quests and progress stay local.

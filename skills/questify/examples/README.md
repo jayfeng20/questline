@@ -1,8 +1,8 @@
-# learn skill examples — a verified example quest
+# questify skill examples — a verified example quest
 
-The quest layout `/learn` writes, with one module per lesson archetype (see
+The quest layout `/questify` writes, with one module per lesson archetype (see
 [`../references/examples.md`](../references/examples.md)). It lives inside the skill, not under
-`quests/`, so the dashboard does not list it; `questline validate skills/learn/examples` checks it.
+`quests/`, so the dashboard does not list it; `questline validate skills/questify/examples` checks it.
 
 ## Course map
 

@@ -1,6 +1,6 @@
-# learn — an agent skill that writes questline quests
+# questify — an agent skill that writes questline quests
 
-`/learn <topic>` writes a **module**, a runnable, test-checked Rust course, into the quest on the
+`/questify <topic>` writes a **module**, a runnable, test-checked Rust course, into the quest on the
 same subject under `quests/` (or starts a new quest), so questline registers it and tracks its
 progress. A module has lessons you run (`cargo run -- 1`), exercises you complete
 (`src/exercises/`), tests that check you and record progress (`cargo run -- check 1`), reference
@@ -8,8 +8,8 @@ solutions, real fixtures in `data/`, and references for when you are stuck. Broa
 get a table of contents to pick from.
 
 Placement: by default (**autosort**, `--auto`) a topic joins the quest that already covers its
-subject and shares that workspace's dependency pins: `/learn arrow-parquet` adds a module to the
-`arrow-rs` quest; with no matching quest it creates one. **Manualsort** (`/learn --manual
+subject and shares that workspace's dependency pins: `/questify arrow-parquet` adds a module to the
+`arrow-rs` quest; with no matching quest it creates one. **Manualsort** (`/questify --manual
 <topic>`) asks before creating anything. See [`references/placement.md`](references/placement.md).
 
 The format follows the Agent Skills standard (`SKILL.md` + YAML frontmatter), so the same folder
@@ -21,12 +21,12 @@ From a questline checkout (the skill finds `quests/` relative to itself; set `QU
 use another checkout):
 
 ```bash
-# Claude Code (user-level; invoke with /learn <topic>)
-ln -s "$PWD/skills/learn" ~/.claude/skills/learn
-# Codex CLI (invoke with $learn <topic>, or just ask it to teach you a topic)
-mkdir -p ~/.codex/skills && ln -s "$PWD/skills/learn" ~/.codex/skills/learn
+# Claude Code (user-level; invoke with /questify <topic>)
+ln -s "$PWD/skills/questify" ~/.claude/skills/questify
+# Codex CLI (invoke with $questify <topic>, or just ask it to teach you a topic)
+mkdir -p ~/.codex/skills && ln -s "$PWD/skills/questify" ~/.codex/skills/questify
 # Other agents that read ~/.agents/skills
-mkdir -p ~/.agents/skills && ln -s "$PWD/skills/learn" ~/.agents/skills/learn
+mkdir -p ~/.agents/skills && ln -s "$PWD/skills/questify" ~/.agents/skills/questify
 ```
 
 ## Layout

@@ -1,7 +1,7 @@
 # Placement — which quest a new module goes into
 
 One quest per subject, so modules that share dependencies share one workspace (one `Cargo.lock`,
-one `target/`, one set of pins): `/learn arrow-parquet` belongs in the existing `arrow-rs` quest
+one `target/`, one set of pins): `/questify arrow-parquet` belongs in the existing `arrow-rs` quest
 as a module, not in a new quest that compiles arrow a second time.
 
 ## 1. Gather

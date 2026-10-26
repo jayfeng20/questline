@@ -1,9 +1,9 @@
 ---
-name: learn
-description: Generate a runnable, test-checked Rust course ("quest" module) on a topic and register it with questline. Use when the user runs /learn <topic> (optionally --auto or --manual) or asks to learn, study, or be taught a Rust crate, library, runtime, or concept hands-on. Topics join the existing quest on the same subject (sharing its dependencies) or start a new one; broad topics get a table of contents to choose from first; each lesson gets a lecture, runnable steps with checked claims, exercises with tests, reference solutions, fixtures, and references.
+name: questify
+description: Generate a runnable, test-checked Rust course ("quest" module) on a topic and register it with questline. Use when the user runs /questify <topic> (optionally --auto or --manual) or asks to learn, study, or be taught a Rust crate, library, runtime, or concept hands-on. Topics join the existing quest on the same subject (sharing its dependencies) or start a new one; broad topics get a table of contents to choose from first; each lesson gets a lecture, runnable steps with checked claims, exercises with tests, reference solutions, fixtures, and references.
 ---
 
-# /learn [--auto | --manual] <topic>
+# /questify [--auto | --manual] <topic>
 
 Build a **module**: a sub-course the learner runs, reads, modifies, and is *tested* on, inside a
 **quest** (one course per subject, one Cargo workspace) registered with questline. The learner

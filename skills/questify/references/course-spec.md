@@ -1,6 +1,6 @@
-# Course spec — what `/learn` must produce
+# Course spec — what `/questify` must produce
 
-`/learn` produces **modules** inside **quests**. A quest is a Cargo workspace at
+`/questify` produces **modules** inside **quests**. A quest is a Cargo workspace at
 `<root>/quests/<quest>/`; a module is one member crate at `modules/<module>/`, a focused course
 of 3–8 lessons. The machine contract (manifests, commands, progress file) is
 `<root>/docs/contract.md`; this file is how to write a good module that satisfies it. A module

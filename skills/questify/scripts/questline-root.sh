@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prints the questline root (the directory holding quests/): $QUESTLINE_ROOT, else the checkout
-# this skill lives in (resolving the ~/.claude/skills/learn symlink).
+# this skill lives in (resolving the ~/.claude/skills/questify symlink).
 set -euo pipefail
 if [[ -n ${QUESTLINE_ROOT:-} ]]; then
   root=$(cd -P "$QUESTLINE_ROOT" && pwd)

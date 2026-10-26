@@ -1,6 +1,6 @@
 # lance-dataset — example module (archetype D: a real library's core structs)
 
-Example output of `/learn lance` → module "dataset basics", kept as a reference for the skill.
+Example output of `/questify lance` → module "dataset basics", kept as a reference for the skill.
 Pins: lance 13.0.0, arrow/parquet 58.4.0, pinned in the module rather than the workspace because
 lance 13 links against Arrow 58 (the workspace pins 59). Needs `protoc`.
 

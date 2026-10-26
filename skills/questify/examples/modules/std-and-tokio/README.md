@@ -1,6 +1,6 @@
 # std-and-tokio — example module (archetypes A, B, C)
 
-Example output of `/learn`, kept as a reference for the skill. Pins (from the example quest's
+Example output of `/questify`, kept as a reference for the skill. Pins (from the example quest's
 workspace): tokio 1.54.1, arrow/parquet 59.3.0.
 
 ## How a lesson works

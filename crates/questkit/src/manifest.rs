@@ -25,7 +25,7 @@ pub struct QuestManifest {
     pub summary: String,
     #[serde(default)]
     pub tags: Vec<String>,
-    /// A published sample; `/learn` autosort never adds modules to it.
+    /// A published sample; `/questify` autosort never adds modules to it.
     #[serde(default)]
     pub example: bool,
 }

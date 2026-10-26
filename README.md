@@ -11,7 +11,7 @@ writes them.
   records your progress).
 - `questline` shows every quest and module with its progress, k9s-style: drill down to lessons
   and exercises, re-check what changed, open a module in your IDE, run a lesson.
-- [`/learn <topic>`](skills/learn) is an agent skill (Claude Code, Codex, …) that writes a new
+- [`/questify <topic>`](skills/questify) is an agent skill (Claude Code, Codex, …) that writes a new
   module into the quest on the same subject, or starts a new quest.
 
 ```
@@ -74,12 +74,12 @@ Or from the dashboard: select the module, `e` to open it in your IDE, `r` on a l
 Install the skill (a symlink, so it follows the checkout), then ask your agent:
 
 ```bash
-ln -s "$PWD/skills/learn" ~/.claude/skills/learn      # Codex: ~/.codex/skills/learn
+ln -s "$PWD/skills/questify" ~/.claude/skills/questify   # Codex: ~/.codex/skills/questify
 ```
 
 ```
-/learn arrow parquet writing      # autosort: joins the arrow quest if there is one, else creates it
-/learn --manual tokio channels    # manualsort: asks before creating a quest or module
+/questify arrow parquet writing   # autosort: joins the arrow quest if there is one, else creates it
+/questify --manual tokio channels # manualsort: asks before creating a quest or module
 ```
 
 Your quests stay local: everything under `quests/` except the example is gitignored. Any
@@ -94,7 +94,7 @@ crates/questkit         the contract: manifests, the lesson runner, `check`, pro
 crates/questline-core   the backend API: discovery, evaluation, the registry, IDE launch
 crates/questline        the CLI and the ratatui dashboard, thin clients of questline-core
 quests/                 registered quests (one example published)
-skills/learn            the /learn agent skill: workflow, templates, scaffolding, examples
+skills/questify         the /questify agent skill: workflow, templates, scaffolding, examples
 docs/contract.md        what a quest must look like and do to be registered
 ```
 

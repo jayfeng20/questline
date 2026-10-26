@@ -64,7 +64,7 @@ Unknown keys are errors, so typos do not pass silently.
 | `contract` | integer | yes | `1`, this document |
 | `title` | string | yes | shown in the dashboard |
 | `summary` | string | yes | one line: what the quest covers, pinned versions |
-| `tags` | array of strings | no | crate names and subjects; `/learn` autosort matches topics against them |
+| `tags` | array of strings | no | crate names and subjects; `/questify` autosort matches topics against them |
 | `example` | bool | no | a published sample: autosort never adds modules to it |
 
 ### 3.2 `module.toml`

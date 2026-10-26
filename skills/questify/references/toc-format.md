@@ -35,9 +35,9 @@ Rules:
   an existing quest for the subject, or a new one), generate one module per chosen row under
   `modules/<module>/` (the row's name is the module id; its number is `order`), and copy the
   whole table into the quest README's course map with a status column (generated / not
-  generated), so a later `/learn <topic>` can add the remaining rows.
+  generated), so a later `/questify <topic>` can add the remaining rows.
 
-## Example: `/learn tokio`
+## Example: `/questify tokio`
 
 ```
 ## Tokio — table of contents
@@ -61,7 +61,7 @@ Suggested paths:
 Which modules should I generate? (numbers, a path, or "all")
 ```
 
-## Example: `/learn lance`
+## Example: `/questify lance`
 
 ```
 ## Lance — table of contents

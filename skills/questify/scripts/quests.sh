@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Everything /learn autosort needs to place a topic: every registered quest's manifest, its
+# Everything /questify autosort needs to place a topic: every registered quest's manifest, its
 # shared dependency pins, and its modules.
 set -euo pipefail
 root=$("$(cd -P "$(dirname "$0")" && pwd)/questline-root.sh")

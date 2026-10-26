@@ -349,7 +349,7 @@ fn draw_table(frame: &mut Frame, app: &mut App, area: Rect) {
                 "No results for this lesson yet: press esc, then c to check the module."
             }
             _ if !app.filter.is_empty() => "Nothing matches the filter (esc clears it).",
-            _ => "No quests yet: generate one with the /learn skill (see skills/learn).",
+            _ => "No quests yet: generate one with the /questify skill (see skills/questify).",
         };
         let inner = area.inner(ratatui::layout::Margin::new(2, 2));
         frame.render_widget(Paragraph::new(hint).fg(p.faint), inner);

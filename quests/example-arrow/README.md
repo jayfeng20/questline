@@ -15,5 +15,5 @@ cargo run -- 1           # lesson 1
 cargo run -- check 1     # test your answers for lesson 1 and save progress
 ```
 
-`example = true` in `quest.toml` keeps `/learn` autosort from adding modules here: generate
+`example = true` in `quest.toml` keeps `/questify` autosort from adding modules here: generate
 your own quests with the skill instead.

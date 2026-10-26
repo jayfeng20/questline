@@ -3,5 +3,5 @@
 contract = 1
 title = "__TITLE__"
 summary = "__SUMMARY__"
-# Words /learn autosort matches new topics against (crate names, the subject).
+# Words /questify autosort matches new topics against (crate names, the subject).
 tags = []

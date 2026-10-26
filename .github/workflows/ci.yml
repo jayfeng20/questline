@@ -95,9 +95,9 @@ jobs:
           cargo run -q --manifest-path ../../../../Cargo.toml -p questline -- eval
           cargo run -q --manifest-path ../../../../Cargo.toml -p questline -- list
 
-  # What /learn scaffolds must build and register, and its example quest must stay verified.
-  learn-skill:
-    name: learn skill
+  # What /questify scaffolds must build and register, and its example quest must stay verified.
+  questify-skill:
+    name: questify skill
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: -D warnings
@@ -108,13 +108,13 @@ jobs:
         with:
           workspaces: |
             . -> target
-            skills/learn/examples -> target
+            skills/questify/examples -> target
       - run: cargo build -q -p questline
       - name: scaffold a quest and a module
         run: |
-          skills/learn/scripts/scaffold.sh quest ci-scaffold
-          skills/learn/scripts/scaffold.sh module ci-scaffold first-module
-          if skills/learn/scripts/scaffold.sh module ci-scaffold first-module; then exit 1; fi
+          skills/questify/scripts/scaffold.sh quest ci-scaffold
+          skills/questify/scripts/scaffold.sh module ci-scaffold first-module
+          if skills/questify/scripts/scaffold.sh module ci-scaffold first-module; then exit 1; fi
       - name: scaffolded module honours the contract
         working-directory: quests/ci-scaffold/modules/first-module
         run: |
@@ -124,9 +124,9 @@ jobs:
           cargo run -q -- check
           test -s .quest/progress.json
       - name: validate
-        run: target/debug/questline validate quests/ci-scaffold skills/learn/examples
+        run: target/debug/questline validate quests/ci-scaffold skills/questify/examples
       - name: example module std-and-tokio
-        working-directory: skills/learn/examples/modules/std-and-tokio
+        working-directory: skills/questify/examples/modules/std-and-tokio
         run: |
           scripts/fetch-data.sh
           cargo run -q -- all
