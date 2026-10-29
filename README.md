@@ -1,7 +1,9 @@
 # questline
 
-A terminal dashboard for runnable, test-checked Rust courses ("quests"), and an agent skill that
-writes them.
+`questline` is a framework to generate interactive (runnable) Rust courses on 
+unfamiliar topics (e.g. `arrow-rs`). It includes
+- a Terminal UI for managing quests (courses) and viewing progress
+- an agentic skill for generating and registering quests
 
 - A **quest** is a course on one subject (say arrow-rs), a Cargo workspace under `quests/`.
   Its **modules** are sub-courses (parquet-reading, compute-kernels…), one member crate each,
@@ -14,23 +16,7 @@ writes them.
 - [`/questify <topic>`](skills/questify) is an agent skill (Claude Code, Codex, …) that writes a new
   module into the quest on the same subject, or starts a new quest.
 
-```
-Root      ~/questline                    <enter>  Drill down          <l>      Logs
-Quests    1                              <c>      Check               <s>      Shell
-Modules   1                              <C>      Check changed       <y>      Manifest
-Progress  ████░░░░░░  41% 9/22           <e>      Open IDE            </>      Filter
-Checking  -                              <d>      Describe            <:>      Command
-Version   0.1.0                          <r>      Run lesson          <?>      Help
-┌──────────────────────── Lessons(example-arrow/arrays-and-recordbatch)[5] ────────────────────────┐
-│#    LESSON                          SUMMARY               PROGRESS          DONE     STATUS      │
-│1    typed_arrays_and_builders       PrimitiveArray<T> ma  ██████████ 100%   4/4      Completed   │
-│2    downcasting_and_dispatch        dyn Array back to va  ██████████ 100%   5/5      Completed   │
-│3    nested_types                    List, FixedSizeList,  ░░░░░░░░░░   0%   0/4      NotStarted  │
-│4    encodings                       Dictionary, Run-End   ░░░░░░░░░░   0%   0/5      NotStarted  │
-│5    schema_and_recordbatch          Field, Schema, Metad  ░░░░░░░░░░   0%   0/4      NotStarted  │
-└──────────────────────────────────────────────────────────────────────────────────────────────────┘
- <modules>   <lessons:arrays-and-recordbatch>
-```
+![demo_image](crates/questline/assets/demo_image.png)
 
 ## Install
 
