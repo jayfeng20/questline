@@ -1,10 +1,14 @@
-//! Commands for taking a quest. `run` and `check` act on the module the current directory is
-//! in, through that module's own runner (`cargo run -- …`, contract §4).
+//! Commands for taking a quest. `run`, `check` and a bare `open` act on the module you are in
+//! (or the only module of the quest you are in); `run` and `check` through that module's own
+//! runner (`cargo run -- …`, contract §4).
 
+use std::path::Path;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use anyhow::Context;
 use clap::Subcommand;
+use questline_core::ModuleKey;
 use questline_core::Questline;
 use questline_core::Target;
 
@@ -28,8 +32,8 @@ pub enum Command {
     },
     /// Open a quest or module in a new IDE window ($QUESTLINE_IDE, else code/cursor/zed/...).
     Open {
-        /// `quest` or `quest/module`.
-        target: Target,
+        /// `quest` or `quest/module`; default: the module you are in.
+        target: Option<Target>,
         /// Also open this lesson's lesson and exercise files.
         #[arg(long)]
         lesson: Option<u8>,
@@ -72,6 +76,21 @@ pub fn run(
             }
         }
         Command::Open { target, lesson } => {
+            let target = match target {
+                Some(target) => target,
+                None => {
+                    let module = current_module()?;
+                    let id = |p: &Path| {
+                        p.file_name()
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                            .into_owned()
+                    };
+                    // `<quest>/modules/<module>`
+                    let quest = module.ancestors().nth(2).map(id).unwrap_or_default();
+                    Target::Module(ModuleKey::new(quest, id(&module)))
+                }
+            };
             let launch = ql()?.open_in_ide(&target, lesson)?;
             println!("opened {} in `{}`", launch.dir.display(), launch.editor);
         }
@@ -79,10 +98,9 @@ pub fn run(
     Ok(ExitCode::SUCCESS)
 }
 
-/// Runs the runner of the module the current directory is in, and exits as it did.
+/// Runs the runner of the module you are in, and exits as it did.
 fn runner(args: impl IntoIterator<Item = String>) -> anyhow::Result<ExitCode> {
-    let cwd = std::env::current_dir().context("current directory")?;
-    let status = questline_core::runner(questline_core::find_module(&cwd)?)
+    let status = questline_core::runner(&current_module()?)
         .args(args)
         .status()
         .context("run cargo (is it on PATH?)")?;
@@ -91,4 +109,9 @@ fn runner(args: impl IntoIterator<Item = String>) -> anyhow::Result<ExitCode> {
         .code()
         .and_then(|c| u8::try_from(c).ok())
         .map_or(ExitCode::FAILURE, ExitCode::from))
+}
+
+fn current_module() -> anyhow::Result<PathBuf> {
+    let cwd = std::env::current_dir().context("current directory")?;
+    Ok(questline_core::find_module(&cwd)?)
 }

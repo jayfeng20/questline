@@ -43,8 +43,9 @@ $EDITOR src/exercises/e01_*.rs
 questline check 1         # run lesson 1's tests and record progress
 ```
 
-`questline run` and `check` work from anywhere inside a module. They are the module's own runner,
-which also works without questline installed: `cargo run -- 1`, `cargo run -- check 1`.
+`questline run` and `check` work from anywhere inside a module (or a quest with one module). They
+are the module's own runner, which also works without questline installed: `cargo run -- 1`,
+`cargo run -- check 1`.
 
 Or from the dashboard: select the module, `e` to open it in your IDE, `r` on a lesson to run it,
 `c` to check it. `?` lists every key; they follow k9s (`j`/`k`, `enter`, `esc`, `/` filter,
@@ -56,7 +57,7 @@ Or from the dashboard: select the module, `e` to open it in your IDE, `r` on a l
 | `questline run [n\|name\|all]` | inside a module: run a lesson (`cargo run -- <n>`); no argument: the syllabus |
 | `questline check [n\|name]` | inside a module: run its exercise tests and record progress (`cargo run -- check`) |
 | `questline list [--json]` | every module with its progress and status |
-| `questline open <quest[/module]> [--lesson N]` | a new IDE window rooted at the module (`$QUESTLINE_IDE`, else `code`, `cursor`, `zed`, …) |
+| `questline open [quest[/module]] [--lesson N]` | a new IDE window rooted at the module, by default the one you are in (`$QUESTLINE_IDE`, else `code`, `cursor`, `zed`, …) |
 
 | dev command (writing quests, scripts, CI) | does |
 |-------------------------------------------|------|
