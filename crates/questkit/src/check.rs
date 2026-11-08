@@ -87,18 +87,17 @@ pub fn evaluate(
 
     let previous = Progress::load(module_dir).ok().flatten();
     let progress = match executable.filter(|_| built.status.success()) {
-        None => {
-            let mut p = Progress::new(
+        None => Progress {
+            message: Some(
+                first_error(&log)
+                    .unwrap_or_else(|| format!("cargo test --no-run failed ({})", built.status)),
+            ),
+            ..Progress::new(
                 fingerprint,
                 Outcome::BuildFailed,
                 previous.map(|p| p.exercises).unwrap_or_default(),
-            );
-            p.message = Some(
-                first_error(&log)
-                    .unwrap_or_else(|| format!("cargo test --no-run failed ({})", built.status)),
-            );
-            p
-        }
+            )
+        },
         Some(exe) => {
             let test = Command::new(&exe)
                 .args(["--color", "never"])
@@ -119,27 +118,30 @@ pub fn evaluate(
                 tee(s, line);
             })?;
             match libtest::parse(&stdout) {
-                None => {
-                    let mut p = Progress::new(fingerprint, Outcome::BuildFailed, Vec::new());
-                    p.message = Some(format!("the test binary did not start ({})", ran.status));
-                    p
-                }
+                None => Progress {
+                    message: Some(format!("the test binary did not start ({})", ran.status)),
+                    ..Progress::new(fingerprint, Outcome::BuildFailed, Vec::new())
+                },
                 Some(run) => {
                     let reported = run.results.len();
-                    let mut p = Progress::new(fingerprint, Outcome::Tested, run.results);
-                    if ran.timed_out {
-                        p.message = Some(format!(
+                    let message = if ran.timed_out {
+                        Some(format!(
                             "tests were stopped after {} s with {reported} of {} reported: an exercise hangs",
                             TEST_TIMEOUT.as_secs(),
                             run.announced
-                        ));
+                        ))
                     } else if reported < run.announced {
-                        p.message = Some(format!(
+                        Some(format!(
                             "the test binary exited after {reported} of {} tests ({})",
                             run.announced, ran.status
-                        ));
+                        ))
+                    } else {
+                        None
+                    };
+                    Progress {
+                        message,
+                        ..Progress::new(fingerprint, Outcome::Tested, run.results)
                     }
-                    p
                 }
             }
         }

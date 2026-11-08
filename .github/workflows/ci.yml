@@ -90,6 +90,10 @@ jobs:
         run: |
           cargo run -q -- check
           test -s .quest/progress.json
+      - name: user commands
+        run: |
+          cargo run -q --manifest-path ../../../../Cargo.toml -p questline -- run 1
+          cargo run -q --manifest-path ../../../../Cargo.toml -p questline -- check 1
       - name: dashboard evaluation
         run: |
           cargo run -q --manifest-path ../../../../Cargo.toml -p questline -- eval

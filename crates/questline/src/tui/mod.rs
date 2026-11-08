@@ -7,7 +7,10 @@ mod ui;
 
 pub use theme::Theme;
 
+use std::ffi::OsStr;
 use std::io::Write;
+use std::path::Path;
+use std::process::Command;
 use std::sync::Arc;
 use std::sync::mpsc;
 use std::time::Duration;
@@ -83,20 +86,12 @@ fn event_loop(
         match app.on_key(key) {
             Action::None => {}
             Action::Quit => return Ok(()),
-            Action::Suspend {
-                dir,
-                program,
-                args,
-                pause,
-            } => {
+            Action::Suspend { mut command, pause } => {
                 ratatui::restore();
-                println!("$ cd {} && {program} {}", dir.display(), args.join(" "));
-                let status = std::process::Command::new(&program)
-                    .args(&args)
-                    .current_dir(&dir)
-                    .status();
+                println!("$ {}", shell_line(&command));
+                let status = command.status();
                 if let Err(e) = &status {
-                    println!("could not run {program}: {e}");
+                    println!("could not run {}: {e}", command.get_program().display());
                 }
                 if pause || status.is_err() {
                     print!("\n[press enter to return to questline]");
@@ -110,6 +105,16 @@ fn event_loop(
             }
         }
     }
+}
+
+/// `cd <dir> && <program> <args>`, as typed in a shell.
+fn shell_line(command: &Command) -> String {
+    let words: Vec<_> = std::iter::once(command.get_program())
+        .chain(command.get_args())
+        .map(OsStr::to_string_lossy)
+        .collect();
+    let dir = command.get_current_dir().unwrap_or(Path::new("."));
+    format!("cd {} && {}", dir.display(), words.join(" "))
 }
 
 #[cfg(test)]
@@ -163,6 +168,15 @@ mod tests {
             "{lessons}"
         );
         assert!(lessons.contains("typed_arrays_and_builders"));
+
+        let Action::Suspend { command, .. } = app.on_key(KeyEvent::from(KeyCode::Char('r'))) else {
+            panic!("r runs the selected lesson");
+        };
+        assert!(
+            shell_line(&command).ends_with("/arrays-and-recordbatch && cargo run -q -- 1"),
+            "{}",
+            shell_line(&command)
+        );
 
         press(&mut app, KeyCode::Char('d'));
         let describe = screen(&mut app);

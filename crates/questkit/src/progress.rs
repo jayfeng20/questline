@@ -99,6 +99,15 @@ impl std::ops::AddAssign for Counts {
     }
 }
 
+impl std::iter::Sum for Counts {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::default(), |mut total, c| {
+            total += c;
+            total
+        })
+    }
+}
+
 impl ExerciseResult {
     /// The test's own name without the `eNN::` module path.
     pub fn short_name(&self) -> &str {

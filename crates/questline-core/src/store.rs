@@ -289,14 +289,12 @@ fn to_batch(quests: &[Quest], synced_at_ms: i64) -> Result<RecordBatch, arrow_sc
     let path = |p: &Path| p.to_string_lossy().into_owned();
     let quest_paths: Vec<String> = modules.iter().map(|(q, _)| path(&q.path)).collect();
     let module_paths: Vec<String> = modules.iter().map(|(_, m)| path(&m.path)).collect();
-    let empty = Vec::new();
     let tags: Vec<Vec<&str>> = modules
         .iter()
         .map(|(q, _)| {
             q.manifest
-                .as_ref()
-                .map_or(&empty, |m| &m.tags)
                 .iter()
+                .flat_map(|m| &m.tags)
                 .map(String::as_str)
                 .collect()
         })
@@ -305,9 +303,8 @@ fn to_batch(quests: &[Quest], synced_at_ms: i64) -> Result<RecordBatch, arrow_sc
         .iter()
         .map(|(_, m)| {
             m.manifest
-                .as_ref()
-                .map_or(&empty, |mm| &mm.requires)
                 .iter()
+                .flat_map(|mm| &mm.requires)
                 .map(String::as_str)
                 .collect()
         })

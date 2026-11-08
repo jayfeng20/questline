@@ -2,7 +2,6 @@
 
 use std::fmt;
 use std::path::PathBuf;
-use std::str::FromStr;
 
 use questkit::Counts;
 use questkit::ModuleManifest;
@@ -10,6 +9,9 @@ use questkit::Outcome;
 use questkit::Progress;
 use questkit::QuestManifest;
 use serde::Serialize;
+
+use crate::Error;
+use crate::Result;
 
 /// `quest/module`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize)]
@@ -41,17 +43,15 @@ pub enum Target {
     Module(ModuleKey),
 }
 
-impl FromStr for Target {
-    type Err = std::convert::Infallible;
-
+impl From<&str> for Target {
     /// `""` → all, `quest` → a quest, `quest/module` → a module.
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from(s: &str) -> Self {
         let s = s.trim_matches('/');
-        Ok(match s.split_once('/') {
+        match s.split_once('/') {
             _ if s.is_empty() => Self::All,
             Some((quest, module)) => Self::Module(ModuleKey::new(quest, module)),
             None => Self::Quest(s.to_string()),
-        })
+        }
     }
 }
 
@@ -150,11 +150,35 @@ impl Snapshot {
     }
 
     pub fn counts(&self) -> Counts {
-        let mut c = Counts::default();
-        for q in &self.quests {
-            c += q.counts();
+        self.quests.iter().map(Quest::counts).sum()
+    }
+
+    /// The modules `targets` name, in snapshot order without duplicates; an error names the
+    /// first target that is not in the snapshot.
+    pub fn resolve(&self, targets: &[Target]) -> Result<Vec<ModuleKey>> {
+        let mut keys: Vec<ModuleKey> = Vec::new();
+        let mut push = |key: &ModuleKey| {
+            if !keys.contains(key) {
+                keys.push(key.clone());
+            }
+        };
+        for target in targets {
+            match target {
+                Target::All => self.modules().for_each(|m| push(&m.key)),
+                Target::Quest(id) => {
+                    let quest = self
+                        .quest(id)
+                        .ok_or_else(|| Error::NotFound(format!("no quest '{id}'")))?;
+                    quest.modules.iter().for_each(|m| push(&m.key));
+                }
+                Target::Module(key) => {
+                    self.module(key)
+                        .ok_or_else(|| Error::NotFound(format!("no module '{key}'")))?;
+                    push(key);
+                }
+            }
         }
-        c
+        Ok(keys)
     }
 }
 
@@ -164,11 +188,7 @@ impl Quest {
     }
 
     pub fn counts(&self) -> Counts {
-        let mut c = Counts::default();
-        for m in &self.modules {
-            c += m.counts();
-        }
-        c
+        self.modules.iter().map(Module::counts).sum()
     }
 
     pub fn status(&self) -> Status {
@@ -343,13 +363,10 @@ mod tests {
 
     #[test]
     fn targets_parse_from_paths() {
-        assert_eq!("".parse::<Target>().unwrap(), Target::All);
+        assert_eq!(Target::from(""), Target::All);
+        assert_eq!(Target::from("arrow-rs"), Target::Quest("arrow-rs".into()));
         assert_eq!(
-            "arrow-rs".parse::<Target>().unwrap(),
-            Target::Quest("arrow-rs".into())
-        );
-        assert_eq!(
-            "arrow-rs/compute-kernels/".parse::<Target>().unwrap(),
+            Target::from("arrow-rs/compute-kernels/"),
             Target::Module(ModuleKey::new("arrow-rs", "compute-kernels"))
         );
     }

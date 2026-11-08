@@ -46,21 +46,22 @@ pub fn load_quest(dir: &Path) -> Quest {
         ));
     }
     let manifest = QuestManifest::load(dir)
-        .map_err(|e| problems.push(format!("{QUEST_MANIFEST}: {e:#}")))
+        .inspect_err(|e| problems.push(format!("{QUEST_MANIFEST}: {e:#}")))
         .ok();
     check_workspace(dir, &mut problems);
 
-    let modules_dir = dir.join(MODULES_DIR);
-    let mut modules: Vec<Module> = match subdirs(&modules_dir) {
-        Ok(dirs) => dirs.iter().map(|m| load_module(&id, m)).collect(),
-        Err(_) => Vec::new(),
-    };
+    let mut modules: Vec<Module> = subdirs(&dir.join(MODULES_DIR))
+        .unwrap_or_default()
+        .iter()
+        .map(|m| load_module(&id, m))
+        .collect();
     if modules.is_empty() {
         problems.push(format!(
             "no modules: add one crate per module under {MODULES_DIR}/"
         ));
     }
-    modules.sort_by(|a, b| (a.order(), &a.key.module).cmp(&(b.order(), &b.key.module)));
+    // Stable, so ties keep the id order of `subdirs`.
+    modules.sort_by_key(Module::order);
     Quest {
         id,
         path: dir.to_path_buf(),
@@ -83,7 +84,7 @@ fn load_module(quest: &str, dir: &Path) -> Module {
         ));
     }
     let manifest = ModuleManifest::load(dir)
-        .map_err(|e| problems.push(format!("{MODULE_MANIFEST}: {e:#}")))
+        .inspect_err(|e| problems.push(format!("{MODULE_MANIFEST}: {e:#}")))
         .ok();
     check_module_files(dir, manifest.as_ref(), &mut problems);
     Module {
@@ -157,15 +158,12 @@ fn check_module_files(dir: &Path, manifest: Option<&ModuleManifest>, problems: &
 
 fn read_toml(path: &Path, problems: &mut Vec<String>) -> Option<toml::Table> {
     let name = path.file_name().unwrap_or_default().to_string_lossy();
-    let text = match std::fs::read_to_string(path) {
-        Ok(text) => text,
-        Err(_) => {
-            problems.push(format!("missing {name}"));
-            return None;
-        }
+    let Ok(text) = std::fs::read_to_string(path) else {
+        problems.push(format!("missing {name}"));
+        return None;
     };
     text.parse()
-        .map_err(|e| problems.push(format!("{name}: {e}")))
+        .inspect_err(|e| problems.push(format!("{name}: {e}")))
         .ok()
 }
 
