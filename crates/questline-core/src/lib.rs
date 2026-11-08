@@ -22,6 +22,10 @@ mod store;
 use std::path::Path;
 use std::path::PathBuf;
 
+use questkit::manifest::MODULE_MANIFEST;
+use questkit::manifest::MODULES_DIR;
+use questkit::manifest::QUEST_MANIFEST;
+
 pub use discover::QUESTS_DIR;
 pub use discover::load_quest;
 pub use eval::EvalEvent;
@@ -98,8 +102,7 @@ impl Questline {
     pub fn sync(&self) -> Result<Snapshot> {
         let _lock = self.store.lock()?;
         let mut cached = self.store.load_progress()?;
-        let mut quests = discover::scan(&self.root)
-            .map_err(|e| Error::io(format!("scan {}", self.root.display()), e))?;
+        let mut quests = self.scan()?;
         for module in quests.iter_mut().flat_map(|q| &mut q.modules) {
             if let Some(registry) = cached.remove(&module.key) {
                 let newer_on_disk = module
@@ -129,7 +132,7 @@ impl Questline {
         on_event: &mut dyn FnMut(EvalEvent),
     ) -> Result<Snapshot> {
         let snapshot = self.sync()?;
-        for key in resolve(&snapshot, targets)? {
+        for key in snapshot.resolve(targets)? {
             let Some(module) = snapshot.module(&key) else {
                 continue;
             };
@@ -177,20 +180,16 @@ impl Questline {
     /// quest, to `position` (1-based, clamped), and renumbers the others `1, 2, 3, …` in their
     /// current order. Only manifests whose `order` changes are rewritten, comments kept.
     pub fn set_order(&self, target: &Target, position: u32) -> Result<Snapshot> {
-        let quests = discover::scan(&self.root)
-            .map_err(|e| Error::io(format!("scan {}", self.root.display()), e))?;
-        order::set_order(&quests, target, position)?;
+        order::set_order(&self.scan()?, target, position)?;
         self.sync()
     }
 
     /// Opens a quest or module directory in a new IDE window, with its README (or, given a
     /// lesson, the lesson and exercise files) open.
     pub fn open_in_ide(&self, target: &Target, lesson: Option<u8>) -> Result<Launch> {
-        let snapshot = discover::scan(&self.root)
-            .map_err(|e| Error::io(format!("scan {}", self.root.display()), e))?;
         let snapshot = Snapshot {
             root: self.root.clone(),
-            quests: snapshot,
+            quests: self.scan()?,
         };
         let (dir, mut files) = match target {
             Target::All => (self.root.clone(), vec![self.root.join("README.md")]),
@@ -223,6 +222,11 @@ impl Questline {
         files.retain(|f| f.is_file());
         ide::open(&dir, &files)
     }
+
+    fn scan(&self) -> Result<Vec<Quest>> {
+        discover::scan(&self.root)
+            .map_err(|e| Error::io(format!("scan {}", self.root.display()), e))
+    }
 }
 
 /// Whether `dir` looks like a questline root.
@@ -238,31 +242,41 @@ pub fn find_root(start: &Path) -> Option<PathBuf> {
         .map(Path::to_path_buf)
 }
 
-fn resolve(snapshot: &Snapshot, targets: &[Target]) -> Result<Vec<ModuleKey>> {
-    let mut keys: Vec<ModuleKey> = Vec::new();
-    let mut push = |key: &ModuleKey| {
-        if !keys.contains(key) {
-            keys.push(key.clone());
-        }
-    };
-    for target in targets {
-        match target {
-            Target::All => snapshot.modules().for_each(|m| push(&m.key)),
-            Target::Quest(id) => {
-                let quest = snapshot
-                    .quest(id)
-                    .ok_or_else(|| Error::NotFound(format!("no quest '{id}'")))?;
-                quest.modules.iter().for_each(|m| push(&m.key));
-            }
-            Target::Module(key) => {
-                snapshot
-                    .module(key)
-                    .ok_or_else(|| Error::NotFound(format!("no module '{key}'")))?;
-                push(key);
-            }
-        }
+/// The module directory (`<quest>/modules/<module>/`) that `dir` is in.
+pub fn find_module(dir: &Path) -> Result<&Path> {
+    let in_quest = |d: &Path| d.join(QUEST_MANIFEST).is_file();
+    if let Some(module) = dir.ancestors().find(|d| {
+        d.join(MODULE_MANIFEST).is_file() && d.parent().and_then(Path::parent).is_some_and(in_quest)
+    }) {
+        return Ok(module);
     }
-    Ok(keys)
+    let message = match dir.ancestors().find(|d| in_quest(d)) {
+        Some(quest) => {
+            let modules: Vec<String> = load_quest(quest)
+                .modules
+                .into_iter()
+                .map(|m| m.key.module)
+                .collect();
+            format!(
+                "{} is a quest: cd into one of its modules ({})",
+                quest.display(),
+                modules.join(", ")
+            )
+        }
+        None => format!(
+            "{} is not in a quest module (quests/<quest>/{MODULES_DIR}/<module>/)",
+            dir.display()
+        ),
+    };
+    Err(Error::NotFound(message))
+}
+
+/// `cargo run -q --` in `module_dir`: the module's own runner (contract §4), to which callers
+/// append its arguments (`<lesson>`, `all`, `check [lesson]`).
+pub fn runner(module_dir: &Path) -> std::process::Command {
+    let mut cargo = std::process::Command::new("cargo");
+    cargo.args(["run", "-q", "--"]).current_dir(module_dir);
+    cargo
 }
 
 #[cfg(test)]
@@ -352,5 +366,24 @@ mod tests {
         let module = discover::tests::write_quest(root.path(), "q", "m", 1);
         assert_eq!(find_root(&module.join("src")).unwrap(), root.path());
         assert!(Questline::open(module).is_err());
+    }
+
+    #[test]
+    fn modules_are_found_from_inside_them_only() {
+        let root = tempfile::tempdir().unwrap();
+        let module = discover::tests::write_quest(root.path(), "q", "b", 1);
+        discover::tests::write_quest(root.path(), "q", "a", 1);
+        assert_eq!(find_module(&module.join("src/lessons")).unwrap(), module);
+
+        let in_quest = find_module(&root.path().join("quests/q/modules")).unwrap_err();
+        assert!(
+            in_quest.to_string().ends_with("one of its modules (a, b)"),
+            "{in_quest}"
+        );
+        let outside = find_module(root.path()).unwrap_err();
+        assert!(
+            outside.to_string().contains("not in a quest module"),
+            "{outside}"
+        );
     }
 }

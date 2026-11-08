@@ -44,10 +44,15 @@ pub fn run(module_dir: &str, run_lesson: fn(u8) -> anyhow::Result<()>) -> anyhow
             }
         }
         Some("check") => {
-            let only = match args.get(1) {
-                Some(arg) => Some(manifest.resolve(arg).with_context(|| unknown(arg))?.number),
-                None => None,
-            };
+            let only = args
+                .get(1)
+                .map(|arg| {
+                    manifest
+                        .resolve(arg)
+                        .map(|l| l.number)
+                        .with_context(|| unknown(arg))
+                })
+                .transpose()?;
             if !check_module(dir, &manifest, only)? {
                 std::process::exit(1);
             }

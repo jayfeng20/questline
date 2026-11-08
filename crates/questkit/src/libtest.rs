@@ -47,11 +47,8 @@ pub fn parse(stdout: &str) -> Option<TestRun> {
             .and_then(|r| r.strip_suffix(" stdout ----"))
         {
             let mut section = Vec::new();
-            while let Some(next) = lines.peek() {
-                if next.starts_with("---- ") || *next == "failures:" {
-                    break;
-                }
-                section.push(lines.next().unwrap_or_default());
+            while let Some(line) = lines.next_if(|l| !l.starts_with("---- ") && *l != "failures:") {
+                section.push(line);
             }
             if let Some(result) = results.iter_mut().find(|r| r.name == name) {
                 let message = panic_message(&section);

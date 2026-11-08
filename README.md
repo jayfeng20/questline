@@ -37,22 +37,30 @@ The repository ships one example quest, [`quests/example-arrow`](quests/example-
 
 ```bash
 cd quests/example-arrow/modules/arrays-and-recordbatch
-cargo run -- list         # the syllabus, with your progress
-cargo run -- 1            # lesson 1; read src/lessons/l01_*.rs alongside
+questline run             # the syllabus, with your progress
+questline run 1           # lesson 1; read src/lessons/l01_*.rs alongside
 $EDITOR src/exercises/e01_*.rs
-cargo run -- check 1      # run lesson 1's tests and record progress
+questline check 1         # run lesson 1's tests and record progress
 ```
+
+`questline run` and `check` work from anywhere inside a module. They are the module's own runner,
+which also works without questline installed: `cargo run -- 1`, `cargo run -- check 1`.
 
 Or from the dashboard: select the module, `e` to open it in your IDE, `r` on a lesson to run it,
 `c` to check it. `?` lists every key; they follow k9s (`j`/`k`, `enter`, `esc`, `/` filter,
 `:` command, `0` all, `d` describe, `l` logs, `s` shell).
 
-| subcommand | does |
-|------------|------|
+| user command | does |
+|--------------|------|
 | `questline [--theme default\|gruvbox-dark\|catppuccin-frappe]` | the dashboard (also `questline tui`); `$QUESTLINE_THEME` sets the default theme |
+| `questline run [n\|name\|all]` | inside a module: run a lesson (`cargo run -- <n>`); no argument: the syllabus |
+| `questline check [n\|name]` | inside a module: run its exercise tests and record progress (`cargo run -- check`) |
 | `questline list [--json]` | every module with its progress and status |
-| `questline eval [quest[/module]…] [--force] [--json]` | check the modules whose files changed; the rest reuse their cached result |
 | `questline open <quest[/module]> [--lesson N]` | a new IDE window rooted at the module (`$QUESTLINE_IDE`, else `code`, `cursor`, `zed`, …) |
+
+| dev command (writing quests, scripts, CI) | does |
+|-------------------------------------------|------|
+| `questline eval [quest[/module]…] [--force] [--json]` | check the modules whose files changed; the rest reuse their cached result |
 | `questline validate [dir…]` | check quests against the contract |
 | `questline order <quest[/module]> <n>` | move it to position `n` in learning order, renumbering the others |
 
@@ -79,7 +87,8 @@ directory that satisfies [the contract](docs/contract.md) is registered by exist
 crates/questkit         the contract: manifests, the lesson runner, `check`, progress.json
                         (linked into every quest module)
 crates/questline-core   the backend API: discovery, evaluation, the registry, IDE launch
-crates/questline        the CLI and the ratatui dashboard, thin clients of questline-core
+crates/questline        the CLI (user.rs, dev.rs) and the ratatui dashboard, thin clients of
+                        questline-core
 quests/                 registered quests (one example published)
 skills/questify         the /questify agent skill: workflow, templates, scaffolding, examples
 docs/contract.md        what a quest must look like and do to be registered

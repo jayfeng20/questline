@@ -3,6 +3,7 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::process::Command;
 use std::sync::Arc;
 use std::sync::mpsc::Sender;
 use std::time::Instant;
@@ -254,11 +255,9 @@ pub struct Job {
 pub enum Action {
     None,
     Quit,
-    /// Leave the dashboard, run `program` in `dir`, come back (after Enter when `pause`).
+    /// Leave the dashboard, run `command`, come back (after Enter when `pause`).
     Suspend {
-        dir: PathBuf,
-        program: String,
-        args: Vec<String>,
+        command: Box<Command>,
         pause: bool,
     },
 }
@@ -474,23 +473,8 @@ impl App {
     }
 
     fn enqueue(&mut self, targets: Vec<Target>, force: bool) {
-        let keys: Vec<ModuleKey> = targets
-            .iter()
-            .flat_map(|t| match t {
-                Target::All => self
-                    .snapshot
-                    .modules()
-                    .map(|m| m.key.clone())
-                    .collect::<Vec<_>>(),
-                Target::Quest(q) => self
-                    .snapshot
-                    .quest(q)
-                    .map(|q| q.modules.iter().map(|m| m.key.clone()).collect())
-                    .unwrap_or_default(),
-                Target::Module(k) => vec![k.clone()],
-            })
-            .collect();
-        for key in keys {
+        // An unknown target queues nothing; the worker reports it.
+        for key in self.snapshot.resolve(&targets).unwrap_or_default() {
             if !self.queued.contains(&key) {
                 self.queued.push(key);
             }
@@ -646,9 +630,9 @@ impl App {
             }
             "modules" | "module" | "mo" | "mods" => return self.command(arg),
             "reload" => self.reload(),
-            "check" => self.enqueue(vec![arg.parse().unwrap_or(Target::All)], true),
+            "check" => self.enqueue(vec![Target::from(arg)], true),
             "help" => self.open_help(),
-            other => match other.parse::<Target>().unwrap_or(Target::All) {
+            other => match Target::from(other) {
                 Target::Quest(q) if self.snapshot.quest(&q).is_some() => {
                     self.reset_to(View::Modules(Some(q)))
                 }
@@ -770,24 +754,20 @@ impl App {
             },
             KeyCode::Char('y') => self.show_manifest(&sel),
             KeyCode::Char('s') => {
-                let dir = self.dir_of(&sel);
-                let shell = std::env::var("SHELL").unwrap_or_else(|_| "sh".into());
+                let mut shell = Command::new(std::env::var_os("SHELL").unwrap_or("sh".into()));
+                shell.current_dir(self.dir_of(&sel));
                 return Action::Suspend {
-                    dir,
-                    program: shell,
-                    args: vec![],
+                    command: Box::new(shell),
                     pause: false,
                 };
             }
             KeyCode::Char('r') => match (sel.module(), sel.lesson()) {
                 (Some(k), Some(n)) => {
-                    let dir = self.dir_of(&sel);
-                    let args = vec!["run".into(), "--quiet".into(), "--".into(), n.to_string()];
+                    let mut lesson = questline_core::runner(&self.dir_of(&sel));
+                    lesson.arg(n.to_string());
                     self.flash(format!("ran lesson {n} of {k}"));
                     return Action::Suspend {
-                        dir,
-                        program: "cargo".into(),
-                        args,
+                        command: Box::new(lesson),
                         pause: true,
                     };
                 }
@@ -992,10 +972,10 @@ fn describe_module(m: &Module) -> Vec<String> {
     l.push(String::new());
     l.push(format!("Commands (in {}):", m.path.display()));
     for cmd in [
-        "cargo run -- list",
-        "cargo run -- 1",
-        "cargo run -- check 1",
-        "cargo run -- all",
+        "questline run",
+        "questline run 1",
+        "questline check 1",
+        "questline run all",
     ] {
         l.push(format!("  {cmd}"));
     }
@@ -1044,7 +1024,7 @@ fn describe_lesson(m: &Module, lesson: &Lesson) -> Vec<String> {
     }
     l.push(String::new());
     l.push(format!(
-        "Run: cargo run -- {0}    Check: cargo run -- check {0}",
+        "Run: questline run {0}    Check: questline check {0}",
         lesson.number
     ));
     if let Some(p) = &m.progress {

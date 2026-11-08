@@ -63,7 +63,7 @@ pub const HELP: &[(&str, &str)] = &[
     ),
     (
         "r",
-        "run the selected lesson (cargo run -- <n>) in the terminal",
+        "run the selected lesson (questline run <n>) in the terminal",
     ),
     ("s", "shell in the selection's directory; exit to come back"),
     ("d", "describe: metadata, progress, files, problems"),
