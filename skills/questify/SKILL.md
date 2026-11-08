@@ -68,8 +68,8 @@ Read, before writing anything:
    the workspace, also `cargo build --workspace` from the quest so the other modules still build.
 9. **Hand over.** Update the quest README's course map (row → **generated**, linked). Tell the
    user the quest and module (and why it went there), the syllabus, and the commands:
-   `cargo run -- 1`, `cargo run -- check 1`, `scripts/fetch-data.sh`, and `questline` for the
-   dashboard. Mention anything you could not verify (e.g. a fixture that needs credentials).
+   `questline run 1`, `questline check 1` (without questline: `cargo run -- 1`,
+   `cargo run -- check 1`), `scripts/fetch-data.sh`, and `questline` for the dashboard. Mention anything you could not verify (e.g. a fixture that needs credentials).
 
 ## Non-negotiables
 

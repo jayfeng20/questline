@@ -242,33 +242,32 @@ pub fn find_root(start: &Path) -> Option<PathBuf> {
         .map(Path::to_path_buf)
 }
 
-/// The module directory (`<quest>/modules/<module>/`) that `dir` is in.
-pub fn find_module(dir: &Path) -> Result<&Path> {
+/// The module directory (`<quest>/modules/<module>/`) that `dir` is in, or the only module of
+/// the quest that `dir` is in.
+pub fn find_module(dir: &Path) -> Result<PathBuf> {
     let in_quest = |d: &Path| d.join(QUEST_MANIFEST).is_file();
     if let Some(module) = dir.ancestors().find(|d| {
         d.join(MODULE_MANIFEST).is_file() && d.parent().and_then(Path::parent).is_some_and(in_quest)
     }) {
-        return Ok(module);
+        return Ok(module.to_path_buf());
     }
-    let message = match dir.ancestors().find(|d| in_quest(d)) {
-        Some(quest) => {
-            let modules: Vec<String> = load_quest(quest)
-                .modules
-                .into_iter()
-                .map(|m| m.key.module)
-                .collect();
-            format!(
-                "{} is a quest: cd into one of its modules ({})",
-                quest.display(),
-                modules.join(", ")
-            )
-        }
-        None => format!(
+    let Some(quest) = dir.ancestors().find(|d| in_quest(d)) else {
+        return Err(Error::NotFound(format!(
             "{} is not in a quest module (quests/<quest>/{MODULES_DIR}/<module>/)",
             dir.display()
-        ),
+        )));
     };
-    Err(Error::NotFound(message))
+    match load_quest(quest).modules.as_slice() {
+        [only] => Ok(only.path.clone()),
+        modules => {
+            let ids: Vec<&str> = modules.iter().map(|m| m.key.module.as_str()).collect();
+            Err(Error::NotFound(format!(
+                "{} is a quest: cd into one of its modules ({})",
+                quest.display(),
+                ids.join(", ")
+            )))
+        }
+    }
 }
 
 /// `cargo run -q --` in `module_dir`: the module's own runner (contract §4), to which callers
@@ -369,11 +368,13 @@ mod tests {
     }
 
     #[test]
-    fn modules_are_found_from_inside_them_only() {
+    fn modules_are_found_from_inside_them_or_their_single_module_quest() {
         let root = tempfile::tempdir().unwrap();
         let module = discover::tests::write_quest(root.path(), "q", "b", 1);
         discover::tests::write_quest(root.path(), "q", "a", 1);
         assert_eq!(find_module(&module.join("src/lessons")).unwrap(), module);
+        let only = discover::tests::write_quest(root.path(), "solo", "m", 1);
+        assert_eq!(find_module(&root.path().join("quests/solo")).unwrap(), only);
 
         let in_quest = find_module(&root.path().join("quests/q/modules")).unwrap_err();
         assert!(
